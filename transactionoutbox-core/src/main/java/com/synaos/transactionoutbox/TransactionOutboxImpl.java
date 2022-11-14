@@ -246,7 +246,6 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                             .getTransaction()
                                             .addPostCommitHook(
                                                     () -> {
-                                                        log.info("Post commit hook for " + entry.description());
                                                         listener.scheduled(entry);
                                                         submitNow(entry);
                                                     });
@@ -272,7 +271,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                         || persistor.findByGroupIdBeforeCreatedAt(transaction, entry.getGroupId(), entry.getCreatedAt()).isPresent()) {
                                     return false;
                                 }
-                                log.info("Processing {}", entry.description());
+                                log.debug("Processing {}", entry.description());
                                 invoke(entry, transaction);
                                 if (entry.getUniqueRequestId() == null) {
                                     persistor.delete(transaction, entry);
@@ -287,10 +286,10 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                 return true;
                             });
             if (success) {
-                log.info("Processed {}", entry.description());
+                log.debug("Processed {}", entry.description());
                 listener.success(entry);
             } else {
-                log.info("Skipped task {} - may be locked, already processed or not in order", entry.getId());
+                log.debug("Skipped task {} - may be locked, already processed or not in order", entry.getId());
                 listener.skipped(entry);
             }
         } catch (InvocationTargetException e) {

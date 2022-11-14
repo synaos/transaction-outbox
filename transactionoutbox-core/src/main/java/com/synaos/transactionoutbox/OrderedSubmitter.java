@@ -63,7 +63,7 @@ public class OrderedSubmitter implements Submitter, Validatable {
         try {
             if (entry.getGroupId() == null) {
                 executor.execute(() -> localExecutor.accept(entry));
-                log.info("Submitted {} for immediate processing", entry.description());
+                log.debug("Submitted {} for immediate processing", entry.description());
                 return;
             }
 
@@ -74,7 +74,7 @@ public class OrderedSubmitter implements Submitter, Validatable {
                 newFuture.thenRun(() -> cleanUpQueue(entry.getGroupId()));
                 return newFuture;
             });
-            log.info("Submitted {} for ordered processing", entry.description());
+            log.debug("Submitted {} for ordered processing", entry.description());
 
         } catch (RejectedExecutionException e) {
             Utils.logAtLevel(

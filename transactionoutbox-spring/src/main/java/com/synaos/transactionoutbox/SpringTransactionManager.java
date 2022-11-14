@@ -92,7 +92,7 @@ public class SpringTransactionManager implements ThreadLocalContextTransactionMa
                     new TransactionSynchronization() {
                         @Override
                         public void beforeCommit(boolean readOnly) {
-                            log.info("Flushing batches");
+                            log.debug("Flushing batches");
                             if (preparedStatement.getBatchCount() != 0) {
                                 Utils.uncheck(preparedStatement::executeBatch);
                             }
