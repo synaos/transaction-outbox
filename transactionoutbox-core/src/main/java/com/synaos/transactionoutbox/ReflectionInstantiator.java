@@ -14,11 +14,11 @@ import java.lang.reflect.Constructor;
 @SuperBuilder
 final class ReflectionInstantiator extends AbstractFullyQualifiedNameInstantiator {
 
-    @Override
-    public Object createInstance(Class<?> clazz) {
-        log.debug("Getting instance of class [{}] via reflection", clazz.getName());
-        Constructor<?> constructor = Utils.uncheckedly(clazz::getDeclaredConstructor);
-        constructor.setAccessible(true);
-        return Utils.uncheckedly(constructor::newInstance);
-    }
+  @Override
+  public Object createInstance(Class<?> clazz) {
+    log.debug("Getting instance of class [{}] via reflection", clazz.getName());
+    Constructor<?> constructor = Utils.uncheckedly(clazz::getDeclaredConstructor);
+    constructor.setAccessible(true);
+    return Utils.uncheckedly(constructor::newInstance);
+  }
 }

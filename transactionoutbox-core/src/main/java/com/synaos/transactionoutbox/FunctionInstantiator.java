@@ -7,10 +7,10 @@ import java.util.function.Function;
 @SuperBuilder
 class FunctionInstantiator extends AbstractFullyQualifiedNameInstantiator {
 
-    private final Function<Class<?>, Object> fn;
+  private final Function<Class<?>, Object> fn;
 
-    @Override
-    public Object createInstance(Class<?> clazz) {
-        return fn.apply(clazz);
-    }
+  @Override
+  public Object createInstance(Class<?> clazz) {
+    return fn.apply(clazz);
+  }
 }

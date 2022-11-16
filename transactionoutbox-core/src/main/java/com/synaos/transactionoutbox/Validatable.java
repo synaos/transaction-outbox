@@ -2,5 +2,5 @@ package com.synaos.transactionoutbox;
 
 interface Validatable {
 
-    void validate(Validator validator);
+  void validate(Validator validator);
 }

@@ -6,5 +6,5 @@ package com.synaos.transactionoutbox;
 @FunctionalInterface
 public interface ThrowingRunnable {
 
-    void run() throws Exception;
+  void run() throws Exception;
 }

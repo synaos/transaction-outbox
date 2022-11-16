@@ -18,10 +18,10 @@ import java.sql.Connection;
 @Builder
 final class DataSourceConnectionProvider implements ConnectionProvider {
 
-    private final DataSource dataSource;
+  private final DataSource dataSource;
 
-    @Override
-    public Connection obtainConnection() {
-        return Utils.uncheckedly(dataSource::getConnection);
-    }
+  @Override
+  public Connection obtainConnection() {
+    return Utils.uncheckedly(dataSource::getConnection);
+  }
 }

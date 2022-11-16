@@ -38,65 +38,65 @@ import java.util.function.Consumer;
 @Builder
 public class OrderedSubmitter implements Submitter, Validatable {
 
-    /**
-     * @param executor The executor to use.
-     */
-    @SuppressWarnings("JavaDoc")
-    private final Executor executor;
+  /**
+   * @param executor The executor to use.
+   */
+  @SuppressWarnings("JavaDoc")
+  private final Executor executor;
 
-    /**
-     * TODO add javadoc
-     */
-    private final ConcurrentHashMap<String, CompletableFuture<Void>> queuedOrderedTasks = new ConcurrentHashMap<>();
+  /**
+   * TODO add javadoc
+   */
+  private final ConcurrentHashMap<String, CompletableFuture<Void>> queuedOrderedTasks = new ConcurrentHashMap<>();
 
-    /**
-     * @param logLevelWorkQueueSaturation The log level to use when work submission hits the executor
-     * queue limit. This usually indicates saturation and may be of greater interest than the
-     * default {@code DEBUG} level.
-     */
-    @SuppressWarnings("JavaDoc")
-    @Builder.Default
-    private final Level logLevelWorkQueueSaturation = Level.DEBUG;
+  /**
+   * @param logLevelWorkQueueSaturation The log level to use when work submission hits the executor
+   * queue limit. This usually indicates saturation and may be of greater interest than the
+   * default {@code DEBUG} level.
+   */
+  @SuppressWarnings("JavaDoc")
+  @Builder.Default
+  private final Level logLevelWorkQueueSaturation = Level.DEBUG;
 
-    @Override
-    public void submit(TransactionOutboxEntry entry, Consumer<TransactionOutboxEntry> localExecutor) {
-        try {
-            if (entry.getGroupId() == null) {
-                executor.execute(() -> localExecutor.accept(entry));
-                log.debug("Submitted {} for immediate processing", entry.description());
-                return;
-            }
+  @Override
+  public void submit(TransactionOutboxEntry entry, Consumer<TransactionOutboxEntry> localExecutor) {
+    try {
+      if (entry.getGroupId() == null) {
+        executor.execute(() -> localExecutor.accept(entry));
+        log.debug("Submitted {} for immediate processing", entry.description());
+        return;
+      }
 
-            queuedOrderedTasks.compute(entry.getGroupId(), (groupId, future) -> {
-                CompletableFuture<Void> newFuture = future == null
-                        ? CompletableFuture.runAsync(() -> localExecutor.accept(entry), executor)
-                        : future.thenRunAsync(() -> localExecutor.accept(entry), executor);
-                newFuture.thenRun(() -> cleanUpQueue(entry.getGroupId()));
-                return newFuture;
-            });
-            log.debug("Submitted {} for ordered processing", entry.description());
+      queuedOrderedTasks.compute(entry.getGroupId(), (groupId, future) -> {
+        CompletableFuture<Void> newFuture = future == null
+                ? CompletableFuture.runAsync(() -> localExecutor.accept(entry), executor)
+                : future.thenRunAsync(() -> localExecutor.accept(entry), executor);
+        newFuture.thenRun(() -> cleanUpQueue(entry.getGroupId()));
+        return newFuture;
+      });
+      log.debug("Submitted {} for ordered processing", entry.description());
 
-        } catch (RejectedExecutionException e) {
-            Utils.logAtLevel(
-                    log,
-                    logLevelWorkQueueSaturation,
-                    "Queued {} for processing when executor is available",
-                    entry.description());
-        } catch (Exception e) {
-            log.warn(
-                    "Failed to submit {} for execution. It will be re-attempted later.",
-                    entry.description(),
-                    e);
-        }
+    } catch (RejectedExecutionException e) {
+      Utils.logAtLevel(
+              log,
+              logLevelWorkQueueSaturation,
+              "Queued {} for processing when executor is available",
+              entry.description());
+    } catch (Exception e) {
+      log.warn(
+              "Failed to submit {} for execution. It will be re-attempted later.",
+              entry.description(),
+              e);
     }
+  }
 
-    private void cleanUpQueue(String groupId) {
-        queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId) && entry.getValue().isDone());
-    }
+  private void cleanUpQueue(String groupId) {
+    queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId) && entry.getValue().isDone());
+  }
 
-    @Override
-    public void validate(Validator validator) {
-        validator.notNull("executor", executor);
-        validator.notNull("logLevelWorkQueueSaturation", logLevelWorkQueueSaturation);
-    }
+  @Override
+  public void validate(Validator validator) {
+    validator.notNull("executor", executor);
+    validator.notNull("logLevelWorkQueueSaturation", logLevelWorkQueueSaturation);
+  }
 }

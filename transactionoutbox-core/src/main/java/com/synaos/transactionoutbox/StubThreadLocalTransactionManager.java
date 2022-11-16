@@ -12,30 +12,30 @@ import java.sql.Connection;
 public class StubThreadLocalTransactionManager
         extends AbstractThreadLocalTransactionManager<SimpleTransaction> {
 
-    @Beta
-    public StubThreadLocalTransactionManager() {
-        // Nothing to do
-    }
+  @Beta
+  public StubThreadLocalTransactionManager() {
+    // Nothing to do
+  }
 
-    @Override
-    public <T, E extends Exception> T inTransactionReturnsThrows(
-            ThrowingTransactionalSupplier<T, E> work) throws E {
-        return withTransaction(
-                atx -> {
-                    T result = work.doWork(atx);
-                    ((SimpleTransaction) atx).processHooks();
-                    return result;
-                });
-    }
+  @Override
+  public <T, E extends Exception> T inTransactionReturnsThrows(
+          ThrowingTransactionalSupplier<T, E> work) throws E {
+    return withTransaction(
+            atx -> {
+              T result = work.doWork(atx);
+              ((SimpleTransaction) atx).processHooks();
+              return result;
+            });
+  }
 
-    private <T, E extends Exception> T withTransaction(ThrowingTransactionalSupplier<T, E> work)
-            throws E {
-        Connection mockConnection = Utils.createLoggingProxy(new ProxyFactory(), Connection.class);
-        try (SimpleTransaction transaction =
-                     pushTransaction(new SimpleTransaction(mockConnection, null))) {
-            return work.doWork(transaction);
-        } finally {
-            popTransaction();
-        }
+  private <T, E extends Exception> T withTransaction(ThrowingTransactionalSupplier<T, E> work)
+          throws E {
+    Connection mockConnection = Utils.createLoggingProxy(new ProxyFactory(), Connection.class);
+    try (SimpleTransaction transaction =
+                 pushTransaction(new SimpleTransaction(mockConnection, null))) {
+      return work.doWork(transaction);
+    } finally {
+      popTransaction();
     }
+  }
 }

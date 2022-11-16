@@ -6,7 +6,7 @@ package com.synaos.transactionoutbox;
 @SuppressWarnings("WeakerAccess")
 public class UncheckedException extends RuntimeException {
 
-    public UncheckedException(Throwable cause) {
-        super(cause);
-    }
+  public UncheckedException(Throwable cause) {
+    super(cause);
+  }
 }
