@@ -257,7 +257,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
 
   @Override
   public <T> T schedule(Class<T> clazz, String groupId) {
-    return this.schedule(clazz, groupId, UUID.randomUUID().toString());
+    return this.schedule(clazz, groupId, null);
 
   }
 
