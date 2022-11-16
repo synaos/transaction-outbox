@@ -222,8 +222,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
         }
     }
 
-    @Override
-    public <T> T schedule(Class<T> clazz, String groupId) {
+    public <T> T schedule(Class<T> clazz, String groupId, String uniqueRequestId) {
         if (!initialized.get()) {
             throw new IllegalStateException("Not initialized");
         }
@@ -239,7 +238,8 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                                     extracted.getMethodName(),
                                                     extracted.getParameters(),
                                                     extracted.getArgs(),
-                                                    groupId);
+                                                    groupId,
+                                                    uniqueRequestId);
                                     validator.validate(entry);
                                     persistor.save(extracted.getTransaction(), entry);
                                     extracted
@@ -255,6 +255,12 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                 }));
     }
 
+    @Override
+    public <T> T schedule(Class<T> clazz, String groupId) {
+        return this.schedule(clazz, groupId, UUID.randomUUID().toString());
+
+    }
+
     private void submitNow(TransactionOutboxEntry entry) {
         submitter.submit(entry, this::processNow);
     }
@@ -267,8 +273,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
             var success =
                     transactionManager.inTransactionReturnsThrows(
                             transaction -> {
-                                if (!persistor.lock(transaction, entry)
-                                        || persistor.findByGroupIdBeforeCreatedAt(transaction, entry.getGroupId(), entry.getCreatedAt()).isPresent()) {
+                                if (!persistor.orderedLock(transaction, entry)) {
                                     return false;
                                 }
                                 log.debug("Processing {}", entry.description());
@@ -285,7 +290,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                 }
                                 return true;
                             });
-            if (success) {
+            if (Boolean.TRUE.equals(success)) {
                 log.debug("Processed {}", entry.description());
                 listener.success(entry);
             } else {
@@ -309,7 +314,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
     }
 
     private TransactionOutboxEntry newEntry(
-            Class<?> clazz, String methodName, Class<?>[] params, Object[] args, String groupId) {
+            Class<?> clazz, String methodName, Class<?>[] params, Object[] args, String groupId, String uniqueRequestId) {
         return TransactionOutboxEntry.builder()
                 .id(UUID.randomUUID().toString())
                 .invocation(
@@ -321,7 +326,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                 serializeMdc && (MDC.getMDCAdapter() != null) ? MDC.getCopyOfContextMap() : null))
                 .lastAttemptTime(null)
                 .nextAttemptTime(after(attemptFrequency))
-                .uniqueRequestId(null)
+                .uniqueRequestId(uniqueRequestId)
                 .createdAt(Instant.now(clockProvider.get()))
                 .groupId(groupId)
                 .build();
@@ -420,7 +425,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
             if (uniqueRequestId != null && uniqueRequestId.length() > 250) {
                 throw new IllegalArgumentException("uniqueRequestId may be up to 250 characters");
             }
-            return TransactionOutboxImpl.this.schedule(clazz, uniqueRequestId);
+            return TransactionOutboxImpl.this.schedule(clazz, UUID.randomUUID().toString(), uniqueRequestId);
         }
     }
 }

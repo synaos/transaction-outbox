@@ -13,7 +13,6 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * The default {@link Persistor} for {@link TransactionOutbox}.
@@ -161,8 +160,7 @@ public class DefaultPersistor implements Persistor, Validatable {
                                      // language=MySQL
                                      "UPDATE "
                                              + tableName
-                                             + " "
-                                             + "SET lastAttemptTime = ?, nextAttemptTime = ?, attempts = ?, blocked = ?, processed = ?, version = ? "
+                                             + " SET lastAttemptTime = ?, nextAttemptTime = ?, attempts = ?, blocked = ?, processed = ?, version = ? "
                                              + "WHERE id = ? and version = ?")) {
             stmt.setTimestamp(
                     1,
@@ -183,6 +181,52 @@ public class DefaultPersistor implements Persistor, Validatable {
     }
 
     @Override
+    public boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) {
+
+        if (entry == null || entry.getId() == null) {
+            return false;
+        }
+
+        try (PreparedStatement stmt = tx.connection().prepareStatement(
+                "SELECT * FROM " + tableName + "  WHERE id = ? AND version = ? AND NOT EXISTS (SELECT * FROM " + tableName + " WHERE groupId = ? AND createdAt < ?) FOR UPDATE SKIP LOCKED"
+        )) {
+            stmt.setString(1, entry.getId());
+            stmt.setInt(2, entry.getVersion());
+            stmt.setString(3, entry.getGroupId());
+            stmt.setTimestamp(4, Timestamp.from(entry.getCreatedAt()));
+            stmt.setQueryTimeout(writeLockTimeoutSeconds);
+            return extractResultSet(entry, stmt);
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    private boolean extractResultSet(TransactionOutboxEntry entry, PreparedStatement stmt) {
+        try {
+            return resultSetIsNotEmpty(entry, stmt);
+        } catch (SQLException | IOException e) {
+            log.debug("Lock attempt timed out on {}", entry.description());
+            return false;
+        }
+    }
+
+    private boolean resultSetIsNotEmpty(TransactionOutboxEntry entry, PreparedStatement stmt) throws SQLException, IOException {
+        try (ResultSet rs = stmt.executeQuery()) {
+            if (!rs.next()) {
+                return false;
+            }
+            // Ensure that subsequent processing uses a deserialized invocation rather than
+            // the object from the caller, which might not serialize well and thus cause a
+            // difference between immediate and retry processing
+            try (Reader invocationStream = rs.getCharacterStream("invocation")) {
+                entry.setInvocation(serializer.deserializeInvocation(invocationStream));
+            }
+            return true;
+        }
+    }
+
+
+    @Override
     public boolean lock(Transaction tx, TransactionOutboxEntry entry) throws Exception {
         try (PreparedStatement stmt =
                      tx.connection()
@@ -200,18 +244,7 @@ public class DefaultPersistor implements Persistor, Validatable {
             stmt.setInt(2, entry.getVersion());
             stmt.setQueryTimeout(writeLockTimeoutSeconds);
             try {
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (!rs.next()) {
-                        return false;
-                    }
-                    // Ensure that subsequent processing uses a deserialized invocation rather than
-                    // the object from the caller, which might not serialize well and thus cause a
-                    // difference between immediate and retry processing
-                    try (Reader invocationStream = rs.getCharacterStream("invocation")) {
-                        entry.setInvocation(serializer.deserializeInvocation(invocationStream));
-                    }
-                    return true;
-                }
+                return resultSetIsNotEmpty(entry, stmt);
             } catch (SQLTimeoutException e) {
                 log.debug("Lock attempt timed out on {}", entry.description());
                 return false;
@@ -235,52 +268,56 @@ public class DefaultPersistor implements Persistor, Validatable {
     @Override
     public List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now)
             throws Exception {
-        String forUpdate = dialect.isSupportsSkipLock() ? " FOR UPDATE SKIP LOCKED" : "";
+
+        //could be moved to dialect
+        String statement = dialect.equals(Dialect.POSTGRESQL_9) ?
+                "WITH minCreatedAtOfGroup as (SELECT min(createdat) OVER (PARTITION BY groupid) as minCreatedAt, id as mId FROM " + tableName + ")"
+                        + " SELECT "
+                        + ALL_FIELDS
+                        + " FROM "
+                        + tableName
+                        + " as t "
+                        + "JOIN minCreatedAtOfGroup on minCreatedAtOfGroup.mId = t.id "
+                        + "WHERE "
+                        + "(SELECT max(nextAttemptTime) "
+                        + "from "
+                        + tableName
+                        + " WHERE groupId = t.groupId "
+                        + "AND createdAt <= t.createdAt) < ? "
+                        + "AND blocked = false "
+                        + "AND processed = false "
+                        + "order by minCreatedAtOfGroup.minCreatedAt, createdat "
+                        + "LIMIT ?" :
+                "SELECT "
+                        + ALL_FIELDS
+                        + " FROM "
+                        + tableName
+                        + " WHERE nextAttemptTime < ? "
+                        + "AND blocked = false "
+                        + "AND processed = false "
+                        + "LIMIT ?";
+
+        String forUpdate = "";
+        if (dialect.isSupportsSkipLock()) {
+            if (dialect.equals(Dialect.POSTGRESQL_9)) {
+                forUpdate = " FOR UPDATE OF t SKIP LOCKED";
+            } else {
+                forUpdate = " FOR UPDATE SKIP LOCKED";
+            }
+        }
+
         try (PreparedStatement stmt =
                      tx.connection()
                              .prepareStatement(
-                                     // language=MySQL
-                                     "SELECT "
-                                             + ALL_FIELDS
-                                             + " FROM "
-                                             + tableName
-                                             + " WHERE nextAttemptTime < ? AND blocked = false AND processed = false"
-                                             + " ORDER BY createdAt LIMIT ?"
-                                             + forUpdate)) {
+                                     statement + forUpdate
+                             )) {
+
             stmt.setTimestamp(1, Timestamp.from(now));
             stmt.setInt(2, batchSize);
             return gatherResults(batchSize, stmt);
         }
     }
 
-    @Override
-    public Optional<TransactionOutboxEntry> findFirstOfGroup(Transaction tx) throws Exception {
-        try (PreparedStatement stmt =
-                     tx.connection()
-                             .prepareStatement(
-                                     "WITH firstElement as " +
-                                             "(SELECT groupid FROM " + tableName + " order by createdat LIMIT 1 FOR UPDATE SKIP LOCKED)" +
-                                             " SELECT * FROM " + tableName + " ob " +
-                                             "WHERE ob.groupid = (SELECT firstElement.groupId FROM firstElement) " +
-                                             "order by createdat " +
-                                             "FOR UPDATE SKIP LOCKED;")) {
-            stmt.setFetchSize(1);
-            return gatherFirstResult(stmt);
-        }
-    }
-
-    @Override
-    public Optional<TransactionOutboxEntry> findByGroupIdBeforeCreatedAt(Transaction tx, String groupId, Instant
-            createdAt) throws Exception {
-        if (groupId == null) {
-            return Optional.empty();
-        }
-        try (PreparedStatement stmt = tx.connection().prepareStatement(
-                "SELECT * FROM " + tableName + " WHERE groupId = '" + groupId + "' AND createdat < '" + Timestamp.from(createdAt) + "'"
-        )) {
-            return gatherFirstResult(stmt);
-        }
-    }
 
     @Override
     public int deleteProcessedAndExpired(Transaction tx, int batchSize, Instant now)
@@ -303,13 +340,6 @@ public class DefaultPersistor implements Persistor, Validatable {
             }
             log.debug("Found {} results", result.size());
             return result;
-        }
-    }
-
-    private Optional<TransactionOutboxEntry> gatherFirstResult(PreparedStatement stmt)
-            throws SQLException, IOException {
-        try (ResultSet rs = stmt.executeQuery()) {
-            return rs.next() ? Optional.of(map(rs)) : Optional.empty();
         }
     }
 

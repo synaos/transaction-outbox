@@ -2,7 +2,6 @@ package com.synaos.transactionoutbox;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Saves and loads {@link TransactionOutboxEntry}s. For most use cases, just use {@link
@@ -106,9 +105,7 @@ public interface Persistor {
     List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now)
             throws Exception;
 
-    Optional<TransactionOutboxEntry> findFirstOfGroup(Transaction tx) throws Exception;
-
-    Optional<TransactionOutboxEntry> findByGroupIdBeforeCreatedAt(Transaction tx, String groupId, Instant createdAt) throws Exception;
+    boolean orderedLock(Transaction tx, TransactionOutboxEntry entry);
 
     int deleteProcessedAndExpired(Transaction tx, int batchSize, Instant now) throws Exception;
 }

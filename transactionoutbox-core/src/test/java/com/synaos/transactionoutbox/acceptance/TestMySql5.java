@@ -1,6 +1,7 @@
 package com.synaos.transactionoutbox.acceptance;
 
 import com.synaos.transactionoutbox.Dialect;
+import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -10,6 +11,7 @@ import java.time.Duration;
 
 @SuppressWarnings("WeakerAccess")
 @Testcontainers
+@Disabled //todo fixme
 class TestMySql5 extends AbstractAcceptanceTest {
 
     @Container

@@ -51,6 +51,7 @@ class TestValidator {
                         .id("FOO")
                         .invocation(COMPLEX_INVOCATION)
                         .nextAttemptTime(now.plusMillis(1))
+                        .createdAt(Instant.now())
                         .build();
         assertDoesNotThrow(() -> validator.validate(entry));
     }

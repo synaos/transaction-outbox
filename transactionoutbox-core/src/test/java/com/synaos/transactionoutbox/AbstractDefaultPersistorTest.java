@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 import static java.time.Instant.now;
@@ -394,6 +395,8 @@ abstract class AbstractDefaultPersistorTest {
                 .blocked(blocked)
                 .lastAttemptTime(null)
                 .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
+                .createdAt(now())
+                .groupId(UUID.randomUUID().toString())
                 .build();
     }
 
@@ -406,6 +409,8 @@ abstract class AbstractDefaultPersistorTest {
                 .lastAttemptTime(null)
                 .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
                 .uniqueRequestId(uniqueId)
+                .createdAt(now())
+                .groupId(UUID.randomUUID().toString())
                 .build();
     }
 

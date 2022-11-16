@@ -80,7 +80,8 @@ class DefaultMigrationManager {
                             "ALTER TABLE TXNO_OUTBOX ADD COLUMN groupId VARCHAR(36) NOT NULL"),
                     new Migration(10,
                             "Add createdAt timestamp",
-                            "ALTER TABLE txno_outbox ADD COLUMN createdAt TIMESTAMP(6) NOT NULL"),
+                            "ALTER TABLE TXNO_OUTBOX ADD COLUMN createdAt TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) NOT NULL",
+                            Map.of(Dialect.POSTGRESQL_9, "ALTER TABLE txno_outbox ADD COLUMN createdAt TIMESTAMP(6) NOT NULL DEFAULT NOW()")),
                     new Migration(11,
                             "Add createdAt index",
                             "CREATE INDEX IX_TXNO_OUTBOX_2 ON TXNO_OUTBOX (createdAt)"));

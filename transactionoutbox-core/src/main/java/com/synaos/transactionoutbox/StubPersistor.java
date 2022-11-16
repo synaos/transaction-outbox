@@ -4,7 +4,6 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Stub implementation of {@link Persistor}.
@@ -51,8 +50,8 @@ public class StubPersistor implements Persistor {
     }
 
     @Override
-    public Optional<TransactionOutboxEntry> findFirstOfGroup(Transaction tx) {
-        return Optional.empty();
+    public boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) {
+        return false;
     }
 
     @Override
@@ -60,8 +59,4 @@ public class StubPersistor implements Persistor {
         return 0;
     }
 
-    @Override
-    public Optional<TransactionOutboxEntry> findByGroupIdBeforeCreatedAt(Transaction tx, String groupId, Instant createdAt) throws Exception {
-        return Optional.empty();
-    }
 }
