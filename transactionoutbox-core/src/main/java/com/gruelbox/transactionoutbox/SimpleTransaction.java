@@ -16,62 +16,62 @@ import java.util.Map;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 class SimpleTransaction implements Transaction, AutoCloseable {
 
-    private final List<Runnable> postCommitHooks = new ArrayList<>();
-    private final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
-    private final Connection connection;
-    private final Object context;
+  private final List<Runnable> postCommitHooks = new ArrayList<>();
+  private final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
+  private final Connection connection;
+  private final Object context;
 
-    @Override
-    public final Connection connection() {
-        return connection;
-    }
+  @Override
+  public final Connection connection() {
+    return connection;
+  }
 
-    @Override
-    public final void addPostCommitHook(Runnable runnable) {
-        postCommitHooks.add(runnable);
-    }
+  @Override
+  public final void addPostCommitHook(Runnable runnable) {
+    postCommitHooks.add(runnable);
+  }
 
-    @Override
-    public final PreparedStatement prepareBatchStatement(String sql) {
-        return preparedStatements.computeIfAbsent(
-                sql, s -> Utils.uncheckedly(() -> connection.prepareStatement(s)));
-    }
+  @Override
+  public final PreparedStatement prepareBatchStatement(String sql) {
+    return preparedStatements.computeIfAbsent(
+            sql, s -> Utils.uncheckedly(() -> connection.prepareStatement(s)));
+  }
 
-    final void flushBatches() {
-        if (!preparedStatements.isEmpty()) {
-            log.debug("Flushing batches");
-            for (PreparedStatement statement : preparedStatements.values()) {
-                Utils.uncheck(statement::executeBatch);
-            }
-        }
+  final void flushBatches() {
+    if (!preparedStatements.isEmpty()) {
+      log.debug("Flushing batches");
+      for (PreparedStatement statement : preparedStatements.values()) {
+        Utils.uncheck(statement::executeBatch);
+      }
     }
+  }
 
-    final void processHooks() {
-        if (!postCommitHooks.isEmpty()) {
-            log.debug("Running post-commit hooks");
-            postCommitHooks.forEach(Runnable::run);
-        }
+  final void processHooks() {
+    if (!postCommitHooks.isEmpty()) {
+      log.debug("Running post-commit hooks");
+      postCommitHooks.forEach(Runnable::run);
     }
+  }
 
-    void commit() {
-        Utils.uncheck(connection::commit);
-    }
+  void commit() {
+    Utils.uncheck(connection::commit);
+  }
 
-    void rollback() throws SQLException {
-        connection.rollback();
-    }
+  void rollback() throws SQLException {
+    connection.rollback();
+  }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T context() {
-        return (T) context;
-    }
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T context() {
+    return (T) context;
+  }
 
-    @Override
-    public void close() {
-        if (!preparedStatements.isEmpty()) {
-            log.debug("Closing batch statements");
-            Utils.safelyClose(preparedStatements.values());
-        }
+  @Override
+  public void close() {
+    if (!preparedStatements.isEmpty()) {
+      log.debug("Closing batch statements");
+      Utils.safelyClose(preparedStatements.values());
     }
+  }
 }

@@ -6,11 +6,11 @@ package com.gruelbox.transactionoutbox;
 @SuppressWarnings("WeakerAccess")
 public final class NoTransactionActiveException extends RuntimeException {
 
-    public NoTransactionActiveException() {
-        super();
-    }
+  public NoTransactionActiveException() {
+    super();
+  }
 
-    public NoTransactionActiveException(Throwable cause) {
-        super(cause);
-    }
+  public NoTransactionActiveException(Throwable cause) {
+    super(cause);
+  }
 }

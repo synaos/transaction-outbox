@@ -12,20 +12,20 @@ import java.time.Duration;
 @Testcontainers
 class TestPostgres9 extends AbstractAcceptanceTest {
 
-    @Container
-    @SuppressWarnings("rawtypes")
-    private static final JdbcDatabaseContainer container =
-            (JdbcDatabaseContainer)
-                    new PostgreSQLContainer("postgres:9").withStartupTimeout(Duration.ofHours(1));
+  @Container
+  @SuppressWarnings("rawtypes")
+  private static final JdbcDatabaseContainer container =
+          (JdbcDatabaseContainer)
+                  new PostgreSQLContainer("postgres:9").withStartupTimeout(Duration.ofHours(1));
 
-    @Override
-    protected ConnectionDetails connectionDetails() {
-        return ConnectionDetails.builder()
-                .dialect(Dialect.POSTGRESQL_9)
-                .driverClassName("org.postgresql.Driver")
-                .url(container.getJdbcUrl())
-                .user(container.getUsername())
-                .password(container.getPassword())
-                .build();
-    }
+  @Override
+  protected ConnectionDetails connectionDetails() {
+    return ConnectionDetails.builder()
+            .dialect(Dialect.POSTGRESQL_9)
+            .driverClassName("org.postgresql.Driver")
+            .url(container.getJdbcUrl())
+            .user(container.getUsername())
+            .password(container.getPassword())
+            .build();
+  }
 }

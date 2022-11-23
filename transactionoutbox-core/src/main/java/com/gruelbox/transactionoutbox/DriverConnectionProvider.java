@@ -25,36 +25,36 @@ import java.sql.DriverManager;
 @Slf4j
 final class DriverConnectionProvider implements ConnectionProvider, Validatable {
 
-    private final String driverClassName;
-    private final String url;
-    private final String user;
-    private final String password;
+  private final String driverClassName;
+  private final String url;
+  private final String user;
+  private final String password;
 
-    private volatile boolean initialized;
+  private volatile boolean initialized;
 
-    @Override
-    public Connection obtainConnection() {
-        return Utils.uncheckedly(
-                () -> {
-                    if (!initialized) {
-                        synchronized (this) {
-                            log.debug("Initialising {}", driverClassName);
-                            Class.forName(driverClassName);
-                            initialized = true;
-                        }
-                    }
-                    log.debug("Opening connection to {}", url);
-                    Connection connection = DriverManager.getConnection(url, user, password);
-                    connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-                    return connection;
-                });
-    }
+  @Override
+  public Connection obtainConnection() {
+    return Utils.uncheckedly(
+            () -> {
+              if (!initialized) {
+                synchronized (this) {
+                  log.debug("Initialising {}", driverClassName);
+                  Class.forName(driverClassName);
+                  initialized = true;
+                }
+              }
+              log.debug("Opening connection to {}", url);
+              Connection connection = DriverManager.getConnection(url, user, password);
+              connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+              return connection;
+            });
+  }
 
-    @Override
-    public void validate(Validator validator) {
-        validator.notBlank("driverClassName", driverClassName);
-        validator.notBlank("url", url);
-        validator.notBlank("user", user);
-        validator.notBlank("password", password);
-    }
+  @Override
+  public void validate(Validator validator) {
+    validator.notBlank("driverClassName", driverClassName);
+    validator.notBlank("url", url);
+    validator.notBlank("user", user);
+    validator.notBlank("password", password);
+  }
 }
