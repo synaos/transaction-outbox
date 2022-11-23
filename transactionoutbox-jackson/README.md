@@ -43,8 +43,7 @@ See [transactionoutbox-core](../README.md) for more information.
 
 ### Fresh projects
 
-If starting with a fresh project, you don't need to worry about compatibility with DefaultInvocationSerializer, so
-configure as follows:
+If starting with a fresh project, you don't need to worry about compatibility with DefaultInvocationSerializer, so configure as follows:
 
 ```java
 var outbox = TransactionOutbox.builder()
@@ -58,8 +57,7 @@ var outbox = TransactionOutbox.builder()
 
 ### Existing projects using DefaultInvocationSerializer
 
-If you're already using Transaction Outbox, you may have outbox tasks queued which your application needs to continue to
-be capable of loading.
+If you're already using Transaction Outbox, you may have outbox tasks queued which your application needs to continue to be capable of loading.
 To handle this, pass through an instance of `DefaultInvocationSerializer` which matches what you used previously:
 
 ```java
