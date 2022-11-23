@@ -28,14 +28,12 @@ public interface ParameterContextTransactionManager<T> extends TransactionManage
    * Given an implementation-specific transaction context, return the active {@link Transaction}.
    *
    * @param context The implementation-specific context, of the same type returned by {@link
-   *                #contextType()}.
+   *     #contextType()}.
    * @return The transaction, or null if the context is not known.
    */
   Transaction transactionFromContext(T context);
 
-  /**
-   * @return The type expected by {@link #transactionFromContext(Object)}.
-   */
+  /** @return The type expected by {@link #transactionFromContext(Object)}. */
   Class<T> contextType();
 
   /**
@@ -45,7 +43,7 @@ public interface ParameterContextTransactionManager<T> extends TransactionManage
    * invocation using the transaction/context at the time of invocation.
    *
    * @param method The method called.
-   * @param args   The method arguments.
+   * @param args The method arguments.
    * @return The transactional invocation.
    */
   @SuppressWarnings("unchecked")
@@ -92,7 +90,7 @@ public interface ParameterContextTransactionManager<T> extends TransactionManage
    * Modifies an {@link Invocation} at runtime to rehyrate it with the transaction context in which
    * the record was locked.
    *
-   * @param invocation  The invocation.
+   * @param invocation The invocation.
    * @param transaction The transaction to use.
    * @return The modified invocation.
    */

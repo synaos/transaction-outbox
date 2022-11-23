@@ -7,7 +7,6 @@ import java.time.Duration;
  * used within {@link TransactionOutbox.TransactionOutboxBuilder#retentionThreshold(Duration)}.
  */
 public class AlreadyScheduledException extends RuntimeException {
-
   AlreadyScheduledException(String message, Throwable cause) {
     super(message, cause);
   }

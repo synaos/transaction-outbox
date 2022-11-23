@@ -30,7 +30,7 @@ public interface InvocationSerializer {
    * Serializes an invocation to the supplied writer.
    *
    * @param invocation The invocation.
-   * @param writer     The writer.
+   * @param writer The writer.
    */
   void serializeInvocation(Invocation invocation, Writer writer);
 

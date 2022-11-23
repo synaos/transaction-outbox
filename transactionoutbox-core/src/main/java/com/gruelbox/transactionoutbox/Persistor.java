@@ -35,7 +35,7 @@ public interface Persistor {
    * the record already exists based on the {@code id} or {@code uniqueRequestId} (the latter of
    * which should not treat nulls as duplicates).
    *
-   * @param tx    The current {@link Transaction}.
+   * @param tx The current {@link Transaction}.
    * @param entry The entry to save. All properties on the object should be saved recursively.
    * @throws Exception Any exception.
    */
@@ -48,10 +48,10 @@ public interface Persistor {
    * database match that on the object. If no such record is found, {@link OptimisticLockException}
    * should be thrown.
    *
-   * @param tx    The current {@link Transaction}.
+   * @param tx The current {@link Transaction}.
    * @param entry The entry to be deleted.
    * @throws OptimisticLockException If no such record is found.
-   * @throws Exception               Any other exception.
+   * @throws Exception Any other exception.
    */
   void delete(Transaction tx, TransactionOutboxEntry entry) throws Exception;
 
@@ -61,31 +61,31 @@ public interface Persistor {
    * the lock is failed. {@link TransactionOutboxEntry#setVersion(int)} is called before returning
    * containing the new version of the entry.
    *
-   * @param tx    The current {@link Transaction}.
+   * @param tx The current {@link Transaction}.
    * @param entry The entry to be updated.
    * @throws OptimisticLockException If no record with same id and version is found.
-   * @throws Exception               Any other exception.
+   * @throws Exception Any other exception.
    */
   void update(Transaction tx, TransactionOutboxEntry entry) throws Exception;
 
   /**
    * Attempts to pessimistically lock an existing {@link TransactionOutboxEntry}.
    *
-   * @param tx    The current {@link Transaction}.
+   * @param tx The current {@link Transaction}.
    * @param entry The entry to be locked
    * @return true if the lock was successful.
    * @throws OptimisticLockException If no record with same id and version is found.
-   * @throws Exception               Any other exception.
+   * @throws Exception Any other exception.
    */
   boolean lock(Transaction tx, TransactionOutboxEntry entry) throws Exception;
 
   /**
    * Clears the blocked flag and resets the attempt count to zero.
    *
-   * @param tx      The current {@link Transaction}.
+   * @param tx The current {@link Transaction}.
    * @param entryId The entry id.
    * @return true if the update was successful. This will be false if the record was no longer
-   * blocked or didn't exist anymore.
+   *     blocked or didn't exist anymore.
    * @throws Exception Any other exception.
    */
   boolean unblock(Transaction tx, String entryId) throws Exception;
@@ -96,16 +96,14 @@ public interface Persistor {
    * #lock(Transaction, TransactionOutboxEntry)}, these records may be selected by another instance
    * for processing.
    *
-   * @param tx        The current {@link Transaction}.
+   * @param tx The current {@link Transaction}.
    * @param batchSize The number of records to select.
-   * @param now       The time to use when selecting records.
+   * @param now The time to use when selecting records.
    * @return The records.
    * @throws Exception Any exception.
    */
   List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now)
           throws Exception;
-
-  boolean orderedLock(Transaction tx, TransactionOutboxEntry entry);
 
   int deleteProcessedAndExpired(Transaction tx, int batchSize, Instant now) throws Exception;
 }

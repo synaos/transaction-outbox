@@ -11,13 +11,12 @@
     <version>${revision}</version>
 
     <name>Transaction Outbox Parent</name>
-    <description>A safe implementation of the transactional outbox pattern with ordering for Java based on gruelbox.
-    </description>
-    <inceptionYear>2022</inceptionYear>
+    <description>A safe implementation of the transactional outbox pattern for Java.</description>
+    <inceptionYear>2020</inceptionYear>
     <url>https://github.com/gruelbox/transaction-outbox</url>
 
     <organization>
-        <name>gruelbox</name>
+        <name>Graham Crockford</name>
         <url>https://gruelbox.com</url>
     </organization>
 

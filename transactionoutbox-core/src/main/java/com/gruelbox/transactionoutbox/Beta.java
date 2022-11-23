@@ -16,6 +16,4 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Beta {
-
-}
+public @interface Beta {}

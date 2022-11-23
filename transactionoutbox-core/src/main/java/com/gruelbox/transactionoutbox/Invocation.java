@@ -1,14 +1,13 @@
 package com.gruelbox.transactionoutbox;
 
 import com.google.gson.annotations.SerializedName;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 
 /**
  * Represents the invocation of a specific method on a named class (where the name is provided by an
@@ -21,9 +20,7 @@ import java.util.Map;
 @Slf4j
 public class Invocation {
 
-  /**
-   * @return The class name (as provided/expected by an {@link Instantiator}).
-   */
+  /** @return The class name (as provided/expected by an {@link Instantiator}). */
   @SuppressWarnings("JavaDoc")
   @SerializedName("c")
   String className;
@@ -37,46 +34,42 @@ public class Invocation {
 
   /**
    * @return The method parameter types. Combined with {@link #methodName}, uniquely identifies the
-   * method.
+   *     method.
    */
   @SuppressWarnings("JavaDoc")
   @SerializedName("p")
   Class<?>[] parameterTypes;
 
-  /**
-   * @return The arguments to call. Must match {@link #parameterTypes}.
-   */
+  /** @return The arguments to call. Must match {@link #parameterTypes}. */
   @SuppressWarnings("JavaDoc")
   @SerializedName("a")
   Object[] args;
 
-  /**
-   * @return Thread-local context to recreate when running the task.
-   */
+  /** @return Thread-local context to recreate when running the task. */
   @SuppressWarnings("JavaDoc")
   @SerializedName("x")
   Map<String, String> mdc;
 
   /**
-   * @param className      The class name (as provided/expected by an {@link Instantiator}).
-   * @param methodName     The method name. Combined with {@link #parameterTypes}, uniquely identifies
-   *                       the method.
+   * @param className The class name (as provided/expected by an {@link Instantiator}).
+   * @param methodName The method name. Combined with {@link #parameterTypes}, uniquely identifies
+   *     the method.
    * @param parameterTypes The method parameter types. Combined with {@link #methodName}, uniquely
-   *                       identifies the method.
-   * @param args           The arguments to call. Must match {@link #parameterTypes}.
+   *     identifies the method.
+   * @param args The arguments to call. Must match {@link #parameterTypes}.
    */
   public Invocation(String className, String methodName, Class<?>[] parameterTypes, Object[] args) {
     this(className, methodName, parameterTypes, args, null);
   }
 
   /**
-   * @param className      The class name (as provided/expected by an {@link Instantiator}).
-   * @param methodName     The method name. Combined with {@link #parameterTypes}, uniquely identifies
-   *                       the method.
+   * @param className The class name (as provided/expected by an {@link Instantiator}).
+   * @param methodName The method name. Combined with {@link #parameterTypes}, uniquely identifies
+   *     the method.
    * @param parameterTypes The method parameter types. Combined with {@link #methodName}, uniquely
-   *                       identifies the method.
-   * @param args           The arguments to call. Must match {@link #parameterTypes}.
-   * @param mdc            Thread-local context to recreate when running the task.
+   *     identifies the method.
+   * @param args The arguments to call. Must match {@link #parameterTypes}.
+   * @param mdc Thread-local context to recreate when running the task.
    */
   public Invocation(
           String className,

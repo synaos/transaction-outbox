@@ -59,7 +59,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
     this.instantiator = Utils.firstNonNull(instantiator, Instantiator::usingReflection);
     this.persistor = persistor;
     this.submitter = Utils.firstNonNull(submitter, Submitter::withDefaultExecutor);
-    this.attemptFrequency = Utils.firstNonNull(attemptFrequency, () -> Duration.of(200, MINUTES));
+    this.attemptFrequency = Utils.firstNonNull(attemptFrequency, () -> Duration.of(2, MINUTES));
     this.blockAfterAttempts = blockAfterAttempts < 1 ? 5 : blockAfterAttempts;
     this.flushBatchSize = flushBatchSize < 1 ? DEFAULT_FLUSH_BATCH_SIZE : flushBatchSize;
     this.clockProvider = clockProvider == null ? Clock::systemDefaultZone : clockProvider;

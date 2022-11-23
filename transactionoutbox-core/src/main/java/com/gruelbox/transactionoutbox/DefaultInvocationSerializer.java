@@ -1,12 +1,19 @@
 package com.gruelbox.transactionoutbox;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -15,10 +22,30 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.ParsePosition;
-import java.time.*;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.MonthDay;
+import java.time.Period;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A locked-down serializer which supports a limited list of primitives and simple JDK value types.
@@ -28,23 +55,23 @@ import java.util.*;
  *   <li>{@link Invocation} itself
  *   <li>Primitive types such as {@code int} or {@code double} or the boxed equivalents
  *   <li>{@link String}
- *   <li>{@link Date}
- *   <li>{@link UUID}
+ *   <li>{@link java.util.Date}
+ *   <li>{@link java.util.UUID}
  *   <li>The {@code java.time} classes:
  *       <ul>
- *         <li>{@link DayOfWeek}
- *         <li>{@link Duration}
- *         <li>{@link Instant}
- *         <li>{@link LocalDate}
- *         <li>{@link LocalDateTime}
- *         <li>{@link Month}
- *         <li>{@link MonthDay}
- *         <li>{@link Period}
- *         <li>{@link Year}
- *         <li>{@link YearMonth}
- *         <li>{@link ZoneOffset}
- *         <li>{@link DayOfWeek}
- *         <li>{@link ChronoUnit}
+ *         <li>{@link java.time.DayOfWeek}
+ *         <li>{@link java.time.Duration}
+ *         <li>{@link java.time.Instant}
+ *         <li>{@link java.time.LocalDate}
+ *         <li>{@link java.time.LocalDateTime}
+ *         <li>{@link java.time.Month}
+ *         <li>{@link java.time.MonthDay}
+ *         <li>{@link java.time.Period}
+ *         <li>{@link java.time.Year}
+ *         <li>{@link java.time.YearMonth}
+ *         <li>{@link java.time.ZoneOffset}
+ *         <li>{@link java.time.DayOfWeek}
+ *         <li>{@link java.time.temporal.ChronoUnit}
  *       </ul>
  *   <li>Arrays specifically typed to one of the above types
  *   <li>Any types specifically passed in, which must be GSON compatible.
@@ -417,7 +444,6 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
   }
 
   static final class UtcDateTypeAdapter extends TypeAdapter<Date> {
-
     private final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
     @Override
@@ -453,9 +479,9 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
     /**
      * Format date into yyyy-MM-ddThh:mm:ss[.sss][Z|[+-]hh:mm]
      *
-     * @param date   the date to format
+     * @param date the date to format
      * @param millis true to include millis precision otherwise false
-     * @param tz     timezone to use for the formatting (GMT will produce 'Z')
+     * @param tz timezone to use for the formatting (GMT will produce 'Z')
      * @return the date formatted as yyyy-MM-ddThh:mm:ss[.sss][Z|[+-]hh:mm]
      */
     private static String format(Date date, boolean millis, TimeZone tz) {
@@ -498,12 +524,11 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
 
       return formatted.toString();
     }
-
     /**
      * Zero pad a number to a specified length
      *
      * @param buffer buffer to use for padding
-     * @param value  the integer value to pad if necessary.
+     * @param value the integer value to pad if necessary.
      * @param length the length of the string we should zero pad
      */
     private static void padInt(StringBuilder buffer, int value, int length) {
@@ -517,7 +542,7 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
      * [yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh:mm]]
      *
      * @param date ISO string to parse in the appropriate format.
-     * @param pos  The position to start parsing from, updated to where parsing stopped.
+     * @param pos The position to start parsing from, updated to where parsing stopped.
      * @return the parsed date
      * @throws ParseException if the date is not in the appropriate format
      */
@@ -618,8 +643,8 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
     /**
      * Check if the expected character exist at the given offset in the value.
      *
-     * @param value    the string to check at the specified offset
-     * @param offset   the offset to look for the expected character
+     * @param value the string to check at the specified offset
+     * @param offset the offset to look for the expected character
      * @param expected the expected character
      * @return true if the expected character exist at the given offset
      */
@@ -630,9 +655,9 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
     /**
      * Parse an integer located between 2 given offsets in a string
      *
-     * @param value      the string to parse
+     * @param value the string to parse
      * @param beginIndex the start index for the integer in the string
-     * @param endIndex   the end index for the integer in the string
+     * @param endIndex the end index for the integer in the string
      * @return the int
      * @throws NumberFormatException if the value is not a number
      */
