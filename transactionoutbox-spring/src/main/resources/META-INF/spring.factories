@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com/synaos/transactionoutbox/SpringTransactionOutboxConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com/gruelbox/transactionoutbox/SpringTransactionOutboxConfiguration
