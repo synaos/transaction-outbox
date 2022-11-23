@@ -8,7 +8,7 @@ import java.time.Duration;
  */
 public class AlreadyScheduledException extends RuntimeException {
 
-  AlreadyScheduledException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    AlreadyScheduledException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
