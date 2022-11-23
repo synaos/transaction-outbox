@@ -10,16 +10,16 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 abstract class AbstractFullyQualifiedNameInstantiator implements Instantiator {
 
-  @Override
-  public final String getName(Class<?> clazz) {
-    return clazz.getName();
-  }
+    @Override
+    public final String getName(Class<?> clazz) {
+        return clazz.getName();
+    }
 
-  @Override
-  public final Object getInstance(String name) {
-    log.debug("Getting class by name [{}]", name);
-    return createInstance(Utils.uncheckedly(() -> Class.forName(name)));
-  }
+    @Override
+    public final Object getInstance(String name) {
+        log.debug("Getting class by name [{}]", name);
+        return createInstance(Utils.uncheckedly(() -> Class.forName(name)));
+    }
 
-  protected abstract Object createInstance(Class<?> clazz);
+    protected abstract Object createInstance(Class<?> clazz);
 }
