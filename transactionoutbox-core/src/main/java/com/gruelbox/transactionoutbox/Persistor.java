@@ -80,6 +80,14 @@ public interface Persistor {
   boolean lock(Transaction tx, TransactionOutboxEntry entry) throws Exception;
 
   /**
+   * TODO
+   * @param tx
+   * @param entry
+   * @return
+   */
+  boolean orderedLock(Transaction tx, TransactionOutboxEntry entry);
+
+  /**
    * Clears the blocked flag and resets the attempt count to zero.
    *
    * @param tx The current {@link Transaction}.
