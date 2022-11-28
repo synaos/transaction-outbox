@@ -234,7 +234,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                               var extracted = transactionManager.extractTransaction(method, args);
                               TransactionOutboxEntry entry =
                                       newEntry(
-                                              extracted.getClazz(),
+                                              clazz,
                                               extracted.getMethodName(),
                                               extracted.getParameters(),
                                               extracted.getArgs(),
