@@ -86,7 +86,7 @@ public class Invocation {
 
   void invoke(Object instance, TransactionOutboxListener listener)
           throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    Method method = instance.getClass().getDeclaredMethod(methodName, parameterTypes);
+    Method method = instance.getClass().getMethod(methodName, parameterTypes);
     method.setAccessible(true);
     if (log.isDebugEnabled()) {
       log.debug("Invoking method {} with args {}", method, Arrays.toString(args));
