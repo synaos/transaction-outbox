@@ -2,11 +2,10 @@ package com.gruelbox.transactionoutbox.acceptance;
 
 import com.gruelbox.transactionoutbox.TransactionOutboxEntry;
 import com.gruelbox.transactionoutbox.TransactionOutboxListener;
-import lombok.Getter;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
-
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import lombok.Getter;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /**
  * Collects an ordered list of all entry events (*excluding blocked events) that have hit this
@@ -16,8 +15,7 @@ final class OrderedEntryListener implements TransactionOutboxListener {
   private final CountDownLatch successLatch;
   private final CountDownLatch blockedLatch;
 
-  @Getter
-  private volatile TransactionOutboxEntry blocked;
+  @Getter private volatile TransactionOutboxEntry blocked;
 
   private final CopyOnWriteArrayList<TransactionOutboxEntry> orderedEntries;
 
@@ -65,15 +63,15 @@ final class OrderedEntryListener implements TransactionOutboxListener {
 
   private TransactionOutboxEntry from(TransactionOutboxEntry entry) {
     return TransactionOutboxEntry.builder()
-            .id(entry.getId())
-            .uniqueRequestId(entry.getUniqueRequestId())
-            .invocation(entry.getInvocation())
-            .lastAttemptTime(entry.getLastAttemptTime())
-            .nextAttemptTime(entry.getNextAttemptTime())
-            .attempts(entry.getAttempts())
-            .blocked(entry.isBlocked())
-            .processed(entry.isProcessed())
-            .version(entry.getVersion())
-            .build();
+        .id(entry.getId())
+        .uniqueRequestId(entry.getUniqueRequestId())
+        .invocation(entry.getInvocation())
+        .lastAttemptTime(entry.getLastAttemptTime())
+        .nextAttemptTime(entry.getNextAttemptTime())
+        .attempts(entry.getAttempts())
+        .blocked(entry.isBlocked())
+        .processed(entry.isProcessed())
+        .version(entry.getVersion())
+        .build();
   }
 }

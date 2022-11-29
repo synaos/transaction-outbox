@@ -1,11 +1,5 @@
 package com.gruelbox.transactionoutbox;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.engine.discovery.predicates.IsTestMethod;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.platform.commons.util.AnnotationUtils;
-import org.junit.platform.commons.util.ReflectionUtils;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
@@ -13,14 +7,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.engine.discovery.predicates.IsTestMethod;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.platform.commons.util.AnnotationUtils;
+import org.junit.platform.commons.util.ReflectionUtils;
 
-/**
- * Thanks to https://gist.github.com/atnak/f98b7b3b04c8fdbc4ad79d795cbda766
- */
+/** Thanks to https://gist.github.com/atnak/f98b7b3b04c8fdbc4ad79d795cbda766 */
 public class TestingUtils {
 
-  private TestingUtils() {
-  }
+  private TestingUtils() {}
 
   private interface TestInvoker {
 
@@ -28,7 +28,7 @@ public class TestingUtils {
   }
 
   public static Stream<DynamicNode> parameterizedClassTester(
-          String displayName, Class<?> clazz, Stream<Arguments> streamOfArguments) {
+      String displayName, Class<?> clazz, Stream<Arguments> streamOfArguments) {
 
     final List<Method> testMethods = ReflectionUtils.findMethods(clazz, new IsTestMethod());
     if (testMethods.isEmpty()) {
@@ -36,9 +36,9 @@ public class TestingUtils {
     }
 
     List<Constructor<?>> candidateConstructors =
-            Arrays.stream(clazz.getDeclaredConstructors())
-                    .filter(ctor -> ctor.getParameterCount() != 0)
-                    .collect(Collectors.toList());
+        Arrays.stream(clazz.getDeclaredConstructors())
+            .filter(ctor -> ctor.getParameterCount() != 0)
+            .collect(Collectors.toList());
     if (candidateConstructors.size() != 1) {
       if (candidateConstructors.isEmpty()) {
         throw new IllegalStateException(clazz.getName() + " has no candiate constructors");
@@ -52,12 +52,12 @@ public class TestingUtils {
     constructor.setAccessible(true);
 
     final List<Method> beforeEachMethods =
-            AnnotationUtils.findAnnotatedMethods(
-                    clazz, BeforeEach.class, ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
+        AnnotationUtils.findAnnotatedMethods(
+            clazz, BeforeEach.class, ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
 
     final List<Method> afterEachMethods =
-            AnnotationUtils.findAnnotatedMethods(
-                    clazz, AfterEach.class, ReflectionUtils.HierarchyTraversalMode.BOTTOM_UP);
+        AnnotationUtils.findAnnotatedMethods(
+            clazz, AfterEach.class, ReflectionUtils.HierarchyTraversalMode.BOTTOM_UP);
 
     for (List<Method> methods : Arrays.asList(testMethods, beforeEachMethods, afterEachMethods)) {
       for (Method method : methods) {
@@ -66,41 +66,41 @@ public class TestingUtils {
     }
 
     return streamOfArguments.map(
-            arguments -> {
-              final Object[] arrayOfArguments = arguments.get();
+        arguments -> {
+          final Object[] arrayOfArguments = arguments.get();
 
-              final TestInvoker testInvoker =
-                      new TestInvoker() {
-                        private Object instance;
+          final TestInvoker testInvoker =
+              new TestInvoker() {
+                private Object instance;
 
-                        @Override
-                        public void invoke(Method testMethod) throws Exception {
-                          if (instance == null) {
-                            instance = constructor.newInstance(arrayOfArguments);
-                          }
+                @Override
+                public void invoke(Method testMethod) throws Exception {
+                  if (instance == null) {
+                    instance = constructor.newInstance(arrayOfArguments);
+                  }
 
-                          try {
-                            for (Method method : beforeEachMethods) {
-                              method.invoke(instance);
-                            }
+                  try {
+                    for (Method method : beforeEachMethods) {
+                      method.invoke(instance);
+                    }
 
-                            testMethod.invoke(instance);
+                    testMethod.invoke(instance);
 
-                          } finally {
-                            for (Method method : afterEachMethods) {
-                              method.invoke(instance);
-                            }
-                          }
-                        }
-                      };
+                  } finally {
+                    for (Method method : afterEachMethods) {
+                      method.invoke(instance);
+                    }
+                  }
+                }
+              };
 
-              return DynamicContainer.dynamicContainer(
-                      displayNameFormatter.format(arrayOfArguments),
-                      testMethods.stream()
-                              .map(
-                                      method ->
-                                              DynamicTest.dynamicTest(
-                                                      method.getName() + "()", () -> testInvoker.invoke(method))));
-            });
+          return DynamicContainer.dynamicContainer(
+              displayNameFormatter.format(arrayOfArguments),
+              testMethods.stream()
+                  .map(
+                      method ->
+                          DynamicTest.dynamicTest(
+                              method.getName() + "()", () -> testInvoker.invoke(method))));
+        });
   }
 }

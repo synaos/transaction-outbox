@@ -1,16 +1,14 @@
 package com.gruelbox.transactionoutbox.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gruelbox.transactionoutbox.InvocationSerializer;
 import com.gruelbox.transactionoutbox.Beta;
 import com.gruelbox.transactionoutbox.DefaultInvocationSerializer;
 import com.gruelbox.transactionoutbox.Invocation;
-
+import com.gruelbox.transactionoutbox.InvocationSerializer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-
 import lombok.Builder;
 
 /**

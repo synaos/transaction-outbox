@@ -1,13 +1,15 @@
 package com.gruelbox.transactionoutbox.acceptance;
 
+import static com.gruelbox.transactionoutbox.acceptance.TestUtils.createTestTable;
+import static com.gruelbox.transactionoutbox.acceptance.TestUtils.uncheck;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.gruelbox.transactionoutbox.JooqTransactionManager;
 import com.gruelbox.transactionoutbox.Dialect;
+import com.gruelbox.transactionoutbox.JooqTransactionManager;
 import com.gruelbox.transactionoutbox.Persistor;
 import com.gruelbox.transactionoutbox.ThrowingRunnable;
 import com.gruelbox.transactionoutbox.Transaction;
@@ -43,7 +45,7 @@ class TestJooqTransactionManagerWithDefaultProviderAndExplicitlyPassedContext {
   void beforeEach() {
     dataSource = pooledDataSource();
     dsl = createDsl();
-    TestUtils.createTestTable(dsl);
+    createTestTable(dsl);
   }
 
   @AfterEach
@@ -176,16 +178,16 @@ class TestJooqTransactionManagerWithDefaultProviderAndExplicitlyPassedContext {
                 // Neither should be fired - the second job is in a nested transaction
                 CompletableFuture.allOf(
                         runAsync(
-                            () -> TestUtils.uncheck(() -> assertFalse(latch1.await(2, TimeUnit.SECONDS)))),
+                            () -> uncheck(() -> assertFalse(latch1.await(2, TimeUnit.SECONDS)))),
                         runAsync(
-                            () -> TestUtils.uncheck(() -> assertFalse(latch2.await(2, TimeUnit.SECONDS)))))
+                            () -> uncheck(() -> assertFalse(latch2.await(2, TimeUnit.SECONDS)))))
                     .get();
               });
 
           // Both should be fired after commit
           CompletableFuture.allOf(
-                  runAsync(() -> TestUtils.uncheck(() -> assertTrue(latch1.await(2, TimeUnit.SECONDS)))),
-                  runAsync(() -> TestUtils.uncheck(() -> assertTrue(latch2.await(2, TimeUnit.SECONDS)))))
+                  runAsync(() -> uncheck(() -> assertTrue(latch1.await(2, TimeUnit.SECONDS)))),
+                  runAsync(() -> uncheck(() -> assertTrue(latch2.await(2, TimeUnit.SECONDS)))))
               .get();
         });
     TestUtils.assertRecordExists(dsl, 1);
@@ -231,9 +233,9 @@ class TestJooqTransactionManagerWithDefaultProviderAndExplicitlyPassedContext {
                     CompletableFuture.allOf(
                             runAsync(
                                 () ->
-                                    TestUtils.uncheck(() -> assertFalse(latch1.await(2, TimeUnit.SECONDS)))),
+                                    uncheck(() -> assertFalse(latch1.await(2, TimeUnit.SECONDS)))),
                             runAsync(
-                                () -> TestUtils.uncheck(() -> assertTrue(latch2.await(2, TimeUnit.SECONDS)))))
+                                () -> uncheck(() -> assertTrue(latch2.await(2, TimeUnit.SECONDS)))))
                         .get();
 
                     TestUtils.assertRecordExists(dsl, 2);
@@ -293,15 +295,15 @@ class TestJooqTransactionManagerWithDefaultProviderAndExplicitlyPassedContext {
 
                 CompletableFuture.allOf(
                         runAsync(
-                            () -> TestUtils.uncheck(() -> assertFalse(latch1.await(2, TimeUnit.SECONDS)))),
+                            () -> uncheck(() -> assertFalse(latch1.await(2, TimeUnit.SECONDS)))),
                         runAsync(
-                            () -> TestUtils.uncheck(() -> assertFalse(latch2.await(2, TimeUnit.SECONDS)))))
+                            () -> uncheck(() -> assertFalse(latch2.await(2, TimeUnit.SECONDS)))))
                     .get();
               });
 
           CompletableFuture.allOf(
-                  runAsync(() -> TestUtils.uncheck(() -> assertTrue(latch1.await(2, TimeUnit.SECONDS)))),
-                  runAsync(() -> TestUtils.uncheck(() -> assertFalse(latch2.await(2, TimeUnit.SECONDS)))))
+                  runAsync(() -> uncheck(() -> assertTrue(latch1.await(2, TimeUnit.SECONDS)))),
+                  runAsync(() -> uncheck(() -> assertFalse(latch2.await(2, TimeUnit.SECONDS)))))
               .get();
         });
     TestUtils.assertRecordExists(dsl, 1);

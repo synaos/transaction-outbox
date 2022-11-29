@@ -1,11 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class TestProxyGeneration {
 
@@ -16,53 +15,47 @@ class TestProxyGeneration {
     proxyFactory = new ProxyFactory();
   }
 
-  /**
-   * Reflection
-   */
+  /** Reflection */
   @Test
   void testReflection() {
     AtomicBoolean called = new AtomicBoolean();
     Interface proxy =
-            proxyFactory.createProxy(
-                    Interface.class,
-                    (method, args) -> {
-                      called.set(true);
-                      return null;
-                    });
+        proxyFactory.createProxy(
+            Interface.class,
+            (method, args) -> {
+              called.set(true);
+              return null;
+            });
     proxy.doThing();
     assertTrue(called.get());
   }
 
-  /**
-   * ByteBuddy
-   */
+  /** ByteBuddy */
   @Test
   void testByteBuddy() {
     AtomicBoolean called = new AtomicBoolean();
     Child proxy =
-            proxyFactory.createProxy(
-                    Child.class,
-                    (method, args) -> {
-                      called.set(true);
-                      return null;
-                    });
+        proxyFactory.createProxy(
+            Child.class,
+            (method, args) -> {
+              called.set(true);
+              return null;
+            });
     proxy.doThing();
     assertTrue(called.get());
   }
 
-  /**
-   * This fails without Objenesis.
-   */
+  /** This fails without Objenesis. */
   @Test
   void testObjensis() {
     AtomicBoolean called = new AtomicBoolean();
     Parent proxy =
-            proxyFactory.createProxy(
-                    Parent.class,
-                    (method, args) -> {
-                      called.set(true);
-                      return null;
-                    });
+        proxyFactory.createProxy(
+            Parent.class,
+            (method, args) -> {
+              called.set(true);
+              return null;
+            });
     proxy.doThing();
     assertTrue(called.get());
   }

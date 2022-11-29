@@ -1,5 +1,24 @@
 package com.gruelbox.transactionoutbox;
 
+import static java.time.Instant.now;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.util.UUID;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -7,18 +26,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.util.UUID;
-import java.util.concurrent.*;
-
-import static java.time.Instant.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 abstract class AbstractDefaultPersistorTest {
@@ -43,19 +50,19 @@ abstract class AbstractDefaultPersistorTest {
     txManager().inTransactionThrows(tx -> persistor().save(tx, entry));
     Thread.sleep(1100);
     txManager()
-            .inTransactionThrows(
-                    tx -> assertThat(persistor().selectBatch(tx, 100, now.plusMillis(1)), contains(entry)));
+        .inTransactionThrows(
+            tx -> assertThat(persistor().selectBatch(tx, 100, now.plusMillis(1)), contains(entry)));
   }
 
   @Test
   void testInsertWithUniqueRequestIdFailureBubblesExceptionUp() {
     var invalidEntry =
-            createEntry("FOO", now, false).toBuilder()
-                    .uniqueRequestId("INTENTIONALLY_TOO_LONG_TO_CAUSE_BLOW_UP".repeat(10))
-                    .build();
+        createEntry("FOO", now, false).toBuilder()
+            .uniqueRequestId("INTENTIONALLY_TOO_LONG_TO_CAUSE_BLOW_UP".repeat(10))
+            .build();
     assertThrows(
-            RuntimeException.class,
-            () -> txManager().inTransactionThrows(tx -> persistor().save(tx, invalidEntry)));
+        RuntimeException.class,
+        () -> txManager().inTransactionThrows(tx -> persistor().save(tx, invalidEntry)));
   }
 
   @Test
@@ -64,100 +71,100 @@ abstract class AbstractDefaultPersistorTest {
     txManager().inTransactionThrows(tx -> persistor().save(tx, entry1));
     Thread.sleep(1100);
     txManager()
-            .inTransactionThrows(
-                    tx ->
-                            assertThat(persistor().selectBatch(tx, 100, now.plusMillis(1)), contains(entry1)));
+        .inTransactionThrows(
+            tx ->
+                assertThat(persistor().selectBatch(tx, 100, now.plusMillis(1)), contains(entry1)));
 
     TransactionOutboxEntry entry2 = createEntry("FOO2", now, false, "context-clientkey2");
     txManager().inTransactionThrows(tx -> persistor().save(tx, entry2));
     Thread.sleep(1100);
     txManager()
-            .inTransactionThrows(
-                    tx ->
-                            assertThat(
-                                    persistor().selectBatch(tx, 100, now.plusMillis(1)),
-                                    containsInAnyOrder(entry1, entry2)));
+        .inTransactionThrows(
+            tx ->
+                assertThat(
+                    persistor().selectBatch(tx, 100, now.plusMillis(1)),
+                    containsInAnyOrder(entry1, entry2)));
 
     TransactionOutboxEntry entry3 = createEntry("FOO3", now, false, "context-clientkey1");
     Assertions.assertThrows(
-            AlreadyScheduledException.class,
-            () -> txManager().inTransactionThrows(tx -> persistor().save(tx, entry3)));
+        AlreadyScheduledException.class,
+        () -> txManager().inTransactionThrows(tx -> persistor().save(tx, entry3)));
     txManager()
-            .inTransactionThrows(
-                    tx ->
-                            assertThat(
-                                    persistor().selectBatch(tx, 100, now.plusMillis(1)),
-                                    containsInAnyOrder(entry1, entry2)));
+        .inTransactionThrows(
+            tx ->
+                assertThat(
+                    persistor().selectBatch(tx, 100, now.plusMillis(1)),
+                    containsInAnyOrder(entry1, entry2)));
   }
 
   @Test
   void testBatchLimitUnderThreshold() throws Exception {
     txManager()
-            .inTransactionThrows(
-                    tx -> {
-                      persistor().save(tx, createEntry("FOO1", now, false));
-                      persistor().save(tx, createEntry("FOO2", now, false));
-                      persistor().save(tx, createEntry("FOO3", now, false));
-                    });
+        .inTransactionThrows(
+            tx -> {
+              persistor().save(tx, createEntry("FOO1", now, false));
+              persistor().save(tx, createEntry("FOO2", now, false));
+              persistor().save(tx, createEntry("FOO3", now, false));
+            });
     txManager()
-            .inTransactionThrows(
-                    tx -> assertThat(persistor().selectBatch(tx, 2, now.plusMillis(1)), hasSize(2)));
+        .inTransactionThrows(
+            tx -> assertThat(persistor().selectBatch(tx, 2, now.plusMillis(1)), hasSize(2)));
   }
 
   @Test
   void testBatchLimitMatchingThreshold() throws Exception {
     txManager()
-            .inTransactionThrows(
-                    tx -> {
-                      persistor().save(tx, createEntry("FOO1", now, false));
-                      persistor().save(tx, createEntry("FOO2", now, false));
-                      persistor().save(tx, createEntry("FOO3", now, false));
-                    });
+        .inTransactionThrows(
+            tx -> {
+              persistor().save(tx, createEntry("FOO1", now, false));
+              persistor().save(tx, createEntry("FOO2", now, false));
+              persistor().save(tx, createEntry("FOO3", now, false));
+            });
     txManager()
-            .inTransactionThrows(
-                    tx -> assertThat(persistor().selectBatch(tx, 3, now.plusMillis(1)), hasSize(3)));
+        .inTransactionThrows(
+            tx -> assertThat(persistor().selectBatch(tx, 3, now.plusMillis(1)), hasSize(3)));
   }
 
   @Test
   void testBatchLimitOverThreshold() throws Exception {
     txManager()
-            .inTransactionThrows(
-                    tx -> {
-                      persistor().save(tx, createEntry("FOO1", now, false));
-                      persistor().save(tx, createEntry("FOO2", now, false));
-                      persistor().save(tx, createEntry("FOO3", now, false));
-                    });
+        .inTransactionThrows(
+            tx -> {
+              persistor().save(tx, createEntry("FOO1", now, false));
+              persistor().save(tx, createEntry("FOO2", now, false));
+              persistor().save(tx, createEntry("FOO3", now, false));
+            });
     txManager()
-            .inTransactionThrows(
-                    tx -> assertThat(persistor().selectBatch(tx, 4, now.plusMillis(1)), hasSize(3)));
+        .inTransactionThrows(
+            tx -> assertThat(persistor().selectBatch(tx, 4, now.plusMillis(1)), hasSize(3)));
   }
 
   @Test
   void testBatchHorizon() throws Exception {
     txManager()
-            .inTransactionThrows(
-                    tx -> {
-                      persistor().save(tx, createEntry("FOO1", now, false));
-                      persistor().save(tx, createEntry("FOO2", now, false));
-                      persistor().save(tx, createEntry("FOO3", now.plusMillis(2), false));
-                    });
+        .inTransactionThrows(
+            tx -> {
+              persistor().save(tx, createEntry("FOO1", now, false));
+              persistor().save(tx, createEntry("FOO2", now, false));
+              persistor().save(tx, createEntry("FOO3", now.plusMillis(2), false));
+            });
     txManager()
-            .inTransactionThrows(
-                    tx -> assertThat(persistor().selectBatch(tx, 3, now.plusMillis(1)), hasSize(2)));
+        .inTransactionThrows(
+            tx -> assertThat(persistor().selectBatch(tx, 3, now.plusMillis(1)), hasSize(2)));
   }
 
   @Test
   void testBlockedEntriesExcluded() throws Exception {
     txManager()
-            .inTransactionThrows(
-                    tx -> {
-                      persistor().save(tx, createEntry("FOO1", now, false));
-                      persistor().save(tx, createEntry("FOO2", now, false));
-                      persistor().save(tx, createEntry("FOO3", now, true));
-                    });
+        .inTransactionThrows(
+            tx -> {
+              persistor().save(tx, createEntry("FOO1", now, false));
+              persistor().save(tx, createEntry("FOO2", now, false));
+              persistor().save(tx, createEntry("FOO3", now, true));
+            });
     txManager()
-            .inTransactionThrows(
-                    tx -> assertThat(persistor().selectBatch(tx, 3, now.plusMillis(1)), hasSize(2)));
+        .inTransactionThrows(
+            tx -> assertThat(persistor().selectBatch(tx, 3, now.plusMillis(1)), hasSize(2)));
   }
 
   static class TransactionOutboxEntryMatcher extends TypeSafeMatcher<TransactionOutboxEntry> {
@@ -170,19 +177,19 @@ abstract class AbstractDefaultPersistorTest {
     @Override
     protected boolean matchesSafely(TransactionOutboxEntry other) {
       return entry.getId().equals(other.getId())
-              && entry.getInvocation().equals(other.getInvocation())
-              && entry.getNextAttemptTime().equals(other.getNextAttemptTime())
-              && entry.getAttempts() == other.getAttempts()
-              && entry.getVersion() == other.getVersion()
-              && entry.isBlocked() == other.isBlocked()
-              && entry.isProcessed() == other.isProcessed();
+          && entry.getInvocation().equals(other.getInvocation())
+          && entry.getNextAttemptTime().equals(other.getNextAttemptTime())
+          && entry.getAttempts() == other.getAttempts()
+          && entry.getVersion() == other.getVersion()
+          && entry.isBlocked() == other.isBlocked()
+          && entry.isProcessed() == other.isProcessed();
     }
 
     @Override
     public void describeTo(Description description) {
       description
-              .appendText("Should match on all fields outside of lastAttemptTime :")
-              .appendText(entry.toString());
+          .appendText("Should match on all fields outside of lastAttemptTime :")
+          .appendText(entry.toString());
     }
   }
 
@@ -197,8 +204,8 @@ abstract class AbstractDefaultPersistorTest {
     entry.setAttempts(1);
     txManager().inTransaction(tx -> assertDoesNotThrow(() -> persistor().update(tx, entry)));
     var updatedEntry1 =
-            txManager()
-                    .inTransactionReturnsThrows(tx -> persistor().selectBatch(tx, 1, now.plusMillis(1)));
+        txManager()
+            .inTransactionReturnsThrows(tx -> persistor().selectBatch(tx, 1, now.plusMillis(1)));
     assertThat(updatedEntry1.size(), equalTo(1));
     assertThat(updatedEntry1.get(0), matches(entry));
     assertThat(updatedEntry1.get(0).getLastAttemptTime(), nullValue());
@@ -208,8 +215,8 @@ abstract class AbstractDefaultPersistorTest {
     txManager().inTransaction(tx -> assertDoesNotThrow(() -> persistor().update(tx, entry)));
 
     var updatedEntry2 =
-            txManager()
-                    .inTransactionReturnsThrows(tx -> persistor().selectBatch(tx, 1, now.plusMillis(1)));
+        txManager()
+            .inTransactionReturnsThrows(tx -> persistor().selectBatch(tx, 1, now.plusMillis(1)));
     assertThat(updatedEntry2.size(), equalTo(1));
     assertThat(updatedEntry2.get(0), matches(entry));
     assertThat(updatedEntry2.get(0).getLastAttemptTime(), notNullValue());
@@ -224,10 +231,10 @@ abstract class AbstractDefaultPersistorTest {
     txManager().inTransaction(tx -> assertDoesNotThrow(() -> persistor().update(tx, entry)));
     original.setAttempts(2);
     txManager()
-            .inTransaction(
-                    tx ->
-                            assertThrows(
-                                    OptimisticLockException.class, () -> persistor().update(tx, original)));
+        .inTransaction(
+            tx ->
+                assertThrows(
+                    OptimisticLockException.class, () -> persistor().update(tx, original)));
   }
 
   @Test
@@ -243,8 +250,8 @@ abstract class AbstractDefaultPersistorTest {
     txManager().inTransactionThrows(tx -> persistor().save(tx, entry));
     txManager().inTransaction(tx -> assertDoesNotThrow(() -> persistor().delete(tx, entry)));
     txManager()
-            .inTransaction(
-                    tx -> assertThrows(OptimisticLockException.class, () -> persistor().delete(tx, entry)));
+        .inTransaction(
+            tx -> assertThrows(OptimisticLockException.class, () -> persistor().delete(tx, entry)));
   }
 
   @Test
@@ -264,7 +271,7 @@ abstract class AbstractDefaultPersistorTest {
     entry.setAttempts(1);
     txManager().inTransaction(tx -> assertDoesNotThrow(() -> persistor().update(tx, entry)));
     txManager()
-            .inTransactionThrows(tx -> assertThat(persistor().lock(tx, original), equalTo(false)));
+        .inTransactionThrows(tx -> assertThat(persistor().lock(tx, original), equalTo(false)));
   }
 
   @Test
@@ -277,36 +284,36 @@ abstract class AbstractDefaultPersistorTest {
     var entry4 = createEntry("FOO4", now.minusSeconds(1), false);
 
     txManager()
-            .inTransactionThrows(
-                    tx -> {
-                      persistor().save(tx, entry1);
-                      persistor().save(tx, entry2);
-                      persistor().save(tx, entry3);
-                      persistor().save(tx, entry4);
-                    });
+        .inTransactionThrows(
+            tx -> {
+              persistor().save(tx, entry1);
+              persistor().save(tx, entry2);
+              persistor().save(tx, entry3);
+              persistor().save(tx, entry4);
+            });
 
     var gotLockLatch = new CountDownLatch(1);
     var executorService = Executors.newFixedThreadPool(1);
     try {
       Future<?> future =
-              executorService.submit(
-                      () -> {
-                        log.info("Background thread starting");
-                        txManager()
-                                .inTransactionThrows(
-                                        tx -> {
-                                          log.info("Background thread attempting select batch");
-                                          var batch = persistor().selectBatch(tx, 2, now);
-                                          assertThat(batch, hasSize(2));
-                                          log.info("Background thread obtained locks, going to sleep");
-                                          gotLockLatch.countDown();
-                                          expectTobeInterrupted();
-                                          for (TransactionOutboxEntry entry : batch) {
-                                            persistor().delete(tx, entry);
-                                          }
-                                        });
-                        return null;
-                      });
+          executorService.submit(
+              () -> {
+                log.info("Background thread starting");
+                txManager()
+                    .inTransactionThrows(
+                        tx -> {
+                          log.info("Background thread attempting select batch");
+                          var batch = persistor().selectBatch(tx, 2, now);
+                          assertThat(batch, hasSize(2));
+                          log.info("Background thread obtained locks, going to sleep");
+                          gotLockLatch.countDown();
+                          expectTobeInterrupted();
+                          for (TransactionOutboxEntry entry : batch) {
+                            persistor().delete(tx, entry);
+                          }
+                        });
+                return null;
+              });
 
       // Wait for the background thread to have obtained the lock
       log.info("Waiting for background thread to obtain lock");
@@ -315,14 +322,14 @@ abstract class AbstractDefaultPersistorTest {
       // Now try and select all four - we should only get two
       log.info("Attempting to obtain duplicate locks");
       txManager()
-              .inTransactionThrows(
-                      tx -> {
-                        var batch = persistor().selectBatch(tx, 4, now);
-                        assertThat(batch, hasSize(2));
-                        for (TransactionOutboxEntry entry : batch) {
-                          persistor().delete(tx, entry);
-                        }
-                      });
+          .inTransactionThrows(
+              tx -> {
+                var batch = persistor().selectBatch(tx, 4, now);
+                assertThat(batch, hasSize(2));
+                for (TransactionOutboxEntry entry : batch) {
+                  persistor().delete(tx, entry);
+                }
+              });
 
       // Kill the other thread
       log.info("Shutting down");
@@ -333,7 +340,7 @@ abstract class AbstractDefaultPersistorTest {
 
       // Ensure that all the records are processed
       txManager()
-              .inTransactionThrows(tx -> assertThat(persistor().selectBatch(tx, 100, now), empty()));
+          .inTransactionThrows(tx -> assertThat(persistor().selectBatch(tx, 100, now), empty()));
 
     } finally {
       executorService.shutdown();
@@ -353,19 +360,19 @@ abstract class AbstractDefaultPersistorTest {
       // Submit another thread which will take a lock and hold it. If it is not
       // told to stop after 10 seconds it fails.
       Future<?> future =
-              executorService.submit(
-                      () -> {
-                        log.info("Background thread starting");
-                        txManager()
-                                .inTransactionThrows(
-                                        tx -> {
-                                          log.info("Background thread attempting lock");
-                                          assertDoesNotThrow(() -> persistor().lock(tx, entry));
-                                          log.info("Background thread obtained lock, going to sleep");
-                                          gotLockLatch.countDown();
-                                          expectTobeInterrupted();
-                                        });
-                      });
+          executorService.submit(
+              () -> {
+                log.info("Background thread starting");
+                txManager()
+                    .inTransactionThrows(
+                        tx -> {
+                          log.info("Background thread attempting lock");
+                          assertDoesNotThrow(() -> persistor().lock(tx, entry));
+                          log.info("Background thread obtained lock, going to sleep");
+                          gotLockLatch.countDown();
+                          expectTobeInterrupted();
+                        });
+              });
 
       // Wait for the background thread to have obtained the lock
       log.info("Waiting for background thread to obtain lock");
@@ -390,36 +397,36 @@ abstract class AbstractDefaultPersistorTest {
 
   private TransactionOutboxEntry createEntry(String id, Instant nextAttemptTime, boolean blocked) {
     return TransactionOutboxEntry.builder()
-            .id(id)
-            .invocation(createInvocation())
-            .blocked(blocked)
-            .lastAttemptTime(null)
-            .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
-            .createdAt(now())
-            .groupId(UUID.randomUUID().toString())
-            .build();
+        .id(id)
+        .invocation(createInvocation())
+        .blocked(blocked)
+        .lastAttemptTime(null)
+        .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
+        .createdAt(now())
+        .groupId(UUID.randomUUID().toString())
+        .build();
   }
 
   private TransactionOutboxEntry createEntry(
-          String id, Instant nextAttemptTime, boolean blocked, String uniqueId) {
+      String id, Instant nextAttemptTime, boolean blocked, String uniqueId) {
     return TransactionOutboxEntry.builder()
-            .id(id)
-            .invocation(createInvocation())
-            .blocked(blocked)
-            .lastAttemptTime(null)
-            .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
-            .uniqueRequestId(uniqueId)
-            .createdAt(now())
-            .groupId(UUID.randomUUID().toString())
-            .build();
+        .id(id)
+        .invocation(createInvocation())
+        .blocked(blocked)
+        .lastAttemptTime(null)
+        .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
+        .uniqueRequestId(uniqueId)
+        .createdAt(now())
+        .groupId(UUID.randomUUID().toString())
+        .build();
   }
 
   private Invocation createInvocation() {
     return new Invocation(
-            "Foo",
-            "Bar",
-            new Class<?>[]{int.class, BigDecimal.class, String.class},
-            new Object[]{1, BigDecimal.TEN, null});
+        "Foo",
+        "Bar",
+        new Class<?>[] {int.class, BigDecimal.class, String.class},
+        new Object[] {1, BigDecimal.TEN, null});
   }
 
   private void expectTobeInterrupted() {

@@ -29,7 +29,7 @@ class Validator {
       return;
     }
     ((Validatable) object)
-            .validate(new Validator(path.isEmpty() ? propertyName : (path + "." + propertyName), this));
+        .validate(new Validator(path.isEmpty() ? propertyName : (path + "." + propertyName), this));
   }
 
   public void notNull(String propertyName, Object object) {
@@ -70,6 +70,6 @@ class Validator {
 
   private void error(String propertyName, String message) {
     throw new IllegalArgumentException(
-            (path.isEmpty() ? "" : path + ".") + propertyName + " " + message);
+        (path.isEmpty() ? "" : path + ".") + propertyName + " " + message);
   }
 }

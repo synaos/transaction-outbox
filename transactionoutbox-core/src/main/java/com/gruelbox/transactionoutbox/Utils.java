@@ -1,13 +1,12 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.event.Level;
-
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 @Slf4j
 class Utils {
@@ -30,10 +29,10 @@ class Utils {
 
   static void safelyClose(Iterable<? extends AutoCloseable> closeables) {
     closeables.forEach(
-            d -> {
-              if (d == null) return;
-              safelyRun("closing resource", d::close);
-            });
+        d -> {
+          if (d == null) return;
+          safelyRun("closing resource", d::close);
+        });
   }
 
   static void uncheck(ThrowingRunnable runnable) {
@@ -64,18 +63,18 @@ class Utils {
 
   static <T> T createLoggingProxy(ProxyFactory proxyFactory, Class<T> clazz) {
     return proxyFactory.createProxy(
-            clazz,
-            (method, args) -> {
-              log.info(
-                      "Called mock " + clazz.getSimpleName() + ".{}({})",
-                      method.getName(),
-                      args == null
-                              ? ""
-                              : Arrays.stream(args)
-                              .map(it -> it == null ? "null" : it.toString())
-                              .collect(Collectors.joining(", ")));
-              return null;
-            });
+        clazz,
+        (method, args) -> {
+          log.info(
+              "Called mock " + clazz.getSimpleName() + ".{}({})",
+              method.getName(),
+              args == null
+                  ? ""
+                  : Arrays.stream(args)
+                      .map(it -> it == null ? "null" : it.toString())
+                      .collect(Collectors.joining(", ")));
+          return null;
+        });
   }
 
   static <T> T firstNonNull(T one, Supplier<T> two) {

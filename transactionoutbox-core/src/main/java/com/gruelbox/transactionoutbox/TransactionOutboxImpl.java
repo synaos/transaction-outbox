@@ -14,14 +14,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 @Slf4j
-@RequiredArgsConstructor
 class TransactionOutboxImpl implements TransactionOutbox, Validatable {
 
   private static final int DEFAULT_FLUSH_BATCH_SIZE = 4096;

@@ -1,16 +1,18 @@
 package com.gruelbox.transactionoutbox.acceptance;
 
-import com.gruelbox.transactionoutbox.*;
-import com.gruelbox.transactionoutbox.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.junit.jupiter.api.Test;
+import static org.junit.Assert.assertTrue;
 
+import com.gruelbox.transactionoutbox.DefaultInvocationSerializer;
+import com.gruelbox.transactionoutbox.DefaultPersistor;
+import com.gruelbox.transactionoutbox.Dialect;
+import com.gruelbox.transactionoutbox.TransactionManager;
+import com.gruelbox.transactionoutbox.TransactionOutbox;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertTrue;
+import lombok.Getter;
+import lombok.Setter;
+import org.junit.jupiter.api.Test;
 
 public class TestRequestSerialization {
 
@@ -24,18 +26,18 @@ public class TestRequestSerialization {
     TransactionManager transactionManager = simpleTxnManager();
     CountDownLatch latch = new CountDownLatch(1);
     TransactionOutbox outbox =
-            TransactionOutbox.builder()
-                    .transactionManager(transactionManager)
-                    .persistor(
-                            DefaultPersistor.builder()
-                                    .dialect(connectionDetails().dialect())
-                                    .serializer(
-                                            DefaultInvocationSerializer.builder()
-                                                    .serializableTypes(Set.of(Arg.class))
-                                                    .build())
-                                    .build())
-                    .listener(new LatchListener(latch))
-                    .build();
+        TransactionOutbox.builder()
+            .transactionManager(transactionManager)
+            .persistor(
+                DefaultPersistor.builder()
+                    .dialect(connectionDetails().dialect())
+                    .serializer(
+                        DefaultInvocationSerializer.builder()
+                            .serializableTypes(Set.of(Arg.class))
+                            .build())
+                    .build())
+            .listener(new LatchListener(latch))
+            .build();
 
     clearOutbox();
 
@@ -49,21 +51,21 @@ public class TestRequestSerialization {
 
   protected AbstractAcceptanceTest.ConnectionDetails connectionDetails() {
     return AbstractAcceptanceTest.ConnectionDetails.builder()
-            .dialect(Dialect.H2)
-            .driverClassName("org.h2.Driver")
-            .url(
-                    "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DEFAULT_LOCK_TIMEOUT=60000;LOB_TIMEOUT=2000;MV_STORE=TRUE")
-            .user("test")
-            .password("test")
-            .build();
+        .dialect(Dialect.H2)
+        .driverClassName("org.h2.Driver")
+        .url(
+            "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DEFAULT_LOCK_TIMEOUT=60000;LOB_TIMEOUT=2000;MV_STORE=TRUE")
+        .user("test")
+        .password("test")
+        .build();
   }
 
   private TransactionManager simpleTxnManager() {
     return TransactionManager.fromConnectionDetails(
-            connectionDetails().driverClassName(),
-            connectionDetails().url(),
-            connectionDetails().user(),
-            connectionDetails().password());
+        connectionDetails().driverClassName(),
+        connectionDetails().url(),
+        connectionDetails().user(),
+        connectionDetails().password());
   }
 
   private void clearOutbox() {
@@ -75,7 +77,7 @@ public class TestRequestSerialization {
     public void process(Arg arg) {
       if (arg.hiddenData != null) {
         throw new IllegalStateException(
-                "Running with state that could not possibly have been serialized");
+            "Running with state that could not possibly have been serialized");
       }
       if (!"SERIALIZED".equals(arg.serializedData)) {
         throw new IllegalStateException("No serialized state");

@@ -1,5 +1,7 @@
 package com.gruelbox.transactionoutbox;
 
+import static com.gruelbox.transactionoutbox.Utils.uncheck;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -38,14 +40,14 @@ public class QuarkusTransactionManager implements ThreadLocalContextTransactionM
    @Transactional(value = TxType.REQUIRES_NEW)
    public void inTransaction(Runnable runnable)
    {
-      Utils.uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromRunnable(runnable)));
+      uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromRunnable(runnable)));
    }
 
    @Override
    @Transactional(value = TxType.REQUIRES_NEW)
    public void inTransaction(TransactionalWork work)
    {
-      Utils.uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromWork(work)));
+      uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromWork(work)));
    }
 
    @Override

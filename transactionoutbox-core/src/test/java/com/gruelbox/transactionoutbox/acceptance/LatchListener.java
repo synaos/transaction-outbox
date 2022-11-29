@@ -2,16 +2,14 @@ package com.gruelbox.transactionoutbox.acceptance;
 
 import com.gruelbox.transactionoutbox.TransactionOutboxEntry;
 import com.gruelbox.transactionoutbox.TransactionOutboxListener;
-import lombok.Getter;
-
 import java.util.concurrent.CountDownLatch;
+import lombok.Getter;
 
 final class LatchListener implements TransactionOutboxListener {
   private final CountDownLatch successLatch;
   private final CountDownLatch blockedLatch;
 
-  @Getter
-  private volatile TransactionOutboxEntry blocked;
+  @Getter private volatile TransactionOutboxEntry blocked;
 
   LatchListener(CountDownLatch successLatch, CountDownLatch markFailedLatch) {
     this.successLatch = successLatch;
