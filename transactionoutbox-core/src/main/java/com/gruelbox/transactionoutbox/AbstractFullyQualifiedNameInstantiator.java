@@ -1,5 +1,7 @@
 package com.gruelbox.transactionoutbox;
 
+import static com.gruelbox.transactionoutbox.Utils.uncheckedly;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -18,7 +20,7 @@ abstract class AbstractFullyQualifiedNameInstantiator implements Instantiator {
   @Override
   public final Object getInstance(String name) {
     log.debug("Getting class by name [{}]", name);
-    return createInstance(Utils.uncheckedly(() -> Class.forName(name)));
+    return createInstance(uncheckedly(() -> Class.forName(name)));
   }
 
   protected abstract Object createInstance(Class<?> clazz);

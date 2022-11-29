@@ -1,19 +1,18 @@
 package com.gruelbox.transactionoutbox;
 
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Optional;
-
 @Slf4j
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 abstract class AbstractThreadLocalTransactionManager<TX extends SimpleTransaction>
-        implements ThreadLocalContextTransactionManager {
+    implements ThreadLocalContextTransactionManager {
 
   private final ThreadLocal<Deque<TX>> transactions = ThreadLocal.withInitial(LinkedList::new);
 
@@ -34,13 +33,13 @@ abstract class AbstractThreadLocalTransactionManager<TX extends SimpleTransactio
 
   @Override
   public final <E extends Exception> void inTransactionThrows(ThrowingTransactionalWork<E> work)
-          throws E {
+      throws E {
     ThreadLocalContextTransactionManager.super.inTransactionThrows(work);
   }
 
   @Override
   public <T, E extends Exception> T requireTransactionReturns(
-          ThrowingTransactionalSupplier<T, E> work) throws E, NoTransactionActiveException {
+      ThrowingTransactionalSupplier<T, E> work) throws E, NoTransactionActiveException {
     return work.doWork(peekTransaction().orElseThrow(NoTransactionActiveException::new));
   }
 

@@ -85,23 +85,23 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
   @Builder
   DefaultInvocationSerializer(Set<Class<?>> serializableTypes, Integer version) {
     this.gson =
-            new GsonBuilder()
-                    .registerTypeAdapter(
-                            Invocation.class,
-                            new InvocationJsonSerializer(
-                                    serializableTypes == null ? Set.of() : serializableTypes,
-                                    version == null ? 2 : version))
-                    .registerTypeAdapter(Date.class, new UtcDateTypeAdapter())
-                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
-                    .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
-                    .registerTypeAdapter(Duration.class, new DurationTypeAdapter())
-                    .registerTypeAdapter(LocalDate.class, new LocalDateTypeAdapter())
-                    .registerTypeAdapter(MonthDay.class, new MonthDayTypeAdapter())
-                    .registerTypeAdapter(Period.class, new PeriodTypeAdapter())
-                    .registerTypeAdapter(Year.class, new YearTypeAdapter())
-                    .registerTypeAdapter(YearMonth.class, new YearMonthAdapter())
-                    .excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.STATIC)
-                    .create();
+        new GsonBuilder()
+            .registerTypeAdapter(
+                Invocation.class,
+                new InvocationJsonSerializer(
+                    serializableTypes == null ? Set.of() : serializableTypes,
+                    version == null ? 2 : version))
+            .registerTypeAdapter(Date.class, new UtcDateTypeAdapter())
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+            .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+            .registerTypeAdapter(Duration.class, new DurationTypeAdapter())
+            .registerTypeAdapter(LocalDate.class, new LocalDateTypeAdapter())
+            .registerTypeAdapter(MonthDay.class, new MonthDayTypeAdapter())
+            .registerTypeAdapter(Period.class, new PeriodTypeAdapter())
+            .registerTypeAdapter(Year.class, new YearTypeAdapter())
+            .registerTypeAdapter(YearMonth.class, new YearMonthAdapter())
+            .excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.STATIC)
+            .create();
   }
 
   @Override
@@ -119,7 +119,7 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
   }
 
   private static final class InvocationJsonSerializer
-          implements JsonSerializer<Invocation>, JsonDeserializer<Invocation> {
+      implements JsonSerializer<Invocation>, JsonDeserializer<Invocation> {
 
     private final int version;
     private final Map<Class<?>, String> classToName = new HashMap<>();
@@ -212,11 +212,11 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
         return classLoader != null ? Class.forName(name, false, classLoader) : Class.forName(name);
       } catch (ClassNotFoundException e) {
         throw new RuntimeException(
-                "Cannot determine array type for "
-                        + name
-                        + " using "
-                        + (classLoader == null ? "root classloader" : "base classloader"),
-                e);
+            "Cannot determine array type for "
+                + name
+                + " using "
+                + (classLoader == null ? "root classloader" : "base classloader"),
+            e);
       }
     }
 
@@ -274,8 +274,8 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
 
     @Override
     public Invocation deserialize(
-            JsonElement json, Type typeOfT, JsonDeserializationContext context)
-            throws JsonParseException {
+        JsonElement json, Type typeOfT, JsonDeserializationContext context)
+        throws JsonParseException {
 
       JsonObject jsonObject = json.getAsJsonObject();
       String className = jsonObject.get("c").getAsString();
@@ -310,7 +310,7 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
             args[i] = context.deserialize(argValue, argClass);
           } catch (Exception e) {
             throw new RuntimeException(
-                    "Failed to deserialize arg [" + argValue + "] of type [" + argType + "]", e);
+                "Failed to deserialize arg [" + argValue + "] of type [" + argType + "]", e);
           }
         }
       }
@@ -331,7 +331,7 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
       var name = classToName.get(clazz);
       if (name == null) {
         throw new IllegalArgumentException(
-                "Cannot serialize class - not found: " + clazz.getName());
+            "Cannot serialize class - not found: " + clazz.getName());
       }
       return name;
     }
@@ -570,7 +570,7 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
         int minutes = 0;
         int seconds = 0;
         int milliseconds =
-                0; // always use 0 otherwise returned date will include millis of current time
+            0; // always use 0 otherwise returned date will include millis of current time
         if (checkOffset(date, offset, 'T')) {
 
           // extract hours, minutes, seconds and milliseconds
@@ -637,7 +637,7 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
       }
       String input = (date == null) ? null : ("'" + date + "'");
       throw new ParseException(
-              "Failed to parse date [" + input + "]: " + fail.getMessage(), pos.getIndex());
+          "Failed to parse date [" + input + "]: " + fail.getMessage(), pos.getIndex());
     }
 
     /**
@@ -662,7 +662,7 @@ public final class DefaultInvocationSerializer implements InvocationSerializer {
      * @throws NumberFormatException if the value is not a number
      */
     private static int parseInt(String value, int beginIndex, int endIndex)
-            throws NumberFormatException {
+        throws NumberFormatException {
       if (beginIndex < 0 || endIndex > value.length() || beginIndex > endIndex) {
         throw new NumberFormatException(value);
       }
