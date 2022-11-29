@@ -57,15 +57,6 @@ public interface TransactionOutbox {
    * @param <T>   The type to proxy.
    * @return The proxy of {@code T}.
    */
-  <T> T schedule(Class<T> clazz, String groupId);
-
-  /**
-   * Entry point for submitting new transaction outbox tasks without groupId
-   *
-   * @param clazz The class to proxy.
-   * @param <T>   The type to proxy.
-   * @return The proxy of {@code T}.
-   */
   <T> T schedule(Class<T> clazz);
 
   /**
@@ -315,6 +306,13 @@ public interface TransactionOutbox {
      * @return Builder.
      */
     ParameterizedScheduleBuilder uniqueRequestId(String uniqueRequestId);
+
+    /**
+     * TODO
+     * @param groupId
+     * @return Builder.
+     */
+    ParameterizedScheduleBuilder groupId(String groupId);
 
     /**
      * Equivalent to {@link TransactionOutbox#schedule(Class)}, but applying additional parameters

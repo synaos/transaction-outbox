@@ -177,7 +177,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
 
   @Override
   public <T> T schedule(Class<T> clazz) {
-    return schedule(clazz, UUID.randomUUID().toString());
+    return schedule(clazz, UUID.randomUUID().toString(), null);
   }
 
   @Override
@@ -222,7 +222,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
     }
   }
 
-  public <T> T schedule(Class<T> clazz, String groupId, String uniqueRequestId) {
+  private <T> T schedule(Class<T> clazz, String groupId, String uniqueRequestId) {
     if (!initialized.get()) {
       throw new IllegalStateException("Not initialized");
     }
@@ -253,12 +253,6 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                                       "Scheduled {} for running after transaction commit", entry.description());
                               return null;
                             }));
-  }
-
-  @Override
-  public <T> T schedule(Class<T> clazz, String groupId) {
-    return this.schedule(clazz, groupId, UUID.randomUUID().toString());
-
   }
 
   private void submitNow(TransactionOutboxEntry entry) {
@@ -413,6 +407,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
   private class ParameterizedScheduleBuilderImpl implements ParameterizedScheduleBuilder {
 
     private String uniqueRequestId;
+    private String groupId;
 
     @Override
     public ParameterizedScheduleBuilder uniqueRequestId(String uniqueRequestId) {
@@ -421,11 +416,20 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
     }
 
     @Override
+    public ParameterizedScheduleBuilder groupId(String groupId) {
+      this.groupId = groupId;
+      return this;
+    }
+
+    @Override
     public <T> T schedule(Class<T> clazz) {
       if (uniqueRequestId != null && uniqueRequestId.length() > 250) {
         throw new IllegalArgumentException("uniqueRequestId may be up to 250 characters");
       }
-      return TransactionOutboxImpl.this.schedule(clazz, UUID.randomUUID().toString(), uniqueRequestId);
+      if (groupId != null && groupId.length() > 250) {
+        throw new IllegalArgumentException("groupId may be up to 250 characters");
+      }
+      return TransactionOutboxImpl.this.schedule(clazz, groupId, uniqueRequestId);
     }
   }
 }

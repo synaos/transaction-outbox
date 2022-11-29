@@ -190,7 +190,7 @@ public class DefaultPersistor implements Persistor, Validatable {
     }
 
     try (PreparedStatement stmt = tx.connection().prepareStatement(
-            "SELECT * FROM " + tableName + "  WHERE id = ? AND version = ? AND NOT EXISTS (SELECT * FROM " + tableName + " WHERE groupId = ? AND createdAt < ?) FOR UPDATE SKIP LOCKED"
+            "SELECT * FROM " + tableName + "  WHERE id = ? AND version = ? AND NOT EXISTS (SELECT * FROM " + tableName + " WHERE groupId = ? AND processed = false AND createdAt < ?) FOR UPDATE SKIP LOCKED"
     )) {
       stmt.setString(1, entry.getId());
       stmt.setInt(2, entry.getVersion());
