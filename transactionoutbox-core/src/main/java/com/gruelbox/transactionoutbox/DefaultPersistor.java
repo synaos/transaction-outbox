@@ -284,6 +284,7 @@ public class DefaultPersistor implements Persistor, Validatable {
                     + "from "
                     + tableName
                     + " WHERE groupId = t.groupId "
+                    + "AND processed = false "
                     + "AND createdAt <= t.createdAt) < ? "
                     + "AND blocked = false "
                     + "AND processed = false "
