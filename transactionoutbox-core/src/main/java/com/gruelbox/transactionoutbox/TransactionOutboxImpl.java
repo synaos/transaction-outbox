@@ -319,7 +319,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
         .lastAttemptTime(null)
         .nextAttemptTime(after(attemptFrequency))
         .uniqueRequestId(uniqueRequestId)
-        .createdAt(Instant.now(clockProvider.get()))
+        .createdAt(clockProvider.get().instant())
         .groupId(groupId)
         .build();
   }
