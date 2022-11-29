@@ -1,10 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
-
 import java.sql.Connection;
 import java.sql.SQLException;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A simple {@link TransactionManager} implementation suitable for applications with no existing
@@ -13,23 +12,23 @@ import java.sql.SQLException;
 @SuperBuilder
 @Slf4j
 final class SimpleTransactionManager
-        extends AbstractThreadLocalTransactionManager<SimpleTransaction> {
+    extends AbstractThreadLocalTransactionManager<SimpleTransaction> {
 
   private final ConnectionProvider connectionProvider;
 
   @Override
   public <T, E extends Exception> T inTransactionReturnsThrows(
-          ThrowingTransactionalSupplier<T, E> work) throws E {
+      ThrowingTransactionalSupplier<T, E> work) throws E {
     return withTransaction(
-            atx -> {
-              T result = processAndCommitOrRollback(work, (SimpleTransaction) atx);
-              ((SimpleTransaction) atx).processHooks();
-              return result;
-            });
+        atx -> {
+          T result = processAndCommitOrRollback(work, (SimpleTransaction) atx);
+          ((SimpleTransaction) atx).processHooks();
+          return result;
+        });
   }
 
   private <T, E extends Exception> T processAndCommitOrRollback(
-          ThrowingTransactionalSupplier<T, E> work, SimpleTransaction transaction) throws E {
+      ThrowingTransactionalSupplier<T, E> work, SimpleTransaction transaction) throws E {
     try {
       log.debug("Processing work");
       T result = work.doWork(transaction);
@@ -40,9 +39,9 @@ final class SimpleTransactionManager
     } catch (Exception e) {
       try {
         log.warn(
-                "Exception in transactional block ({}{}). Rolling back. See later messages for detail",
-                e.getClass().getSimpleName(),
-                e.getMessage() == null ? "" : (" - " + e.getMessage()));
+            "Exception in transactional block ({}{}). Rolling back. See later messages for detail",
+            e.getClass().getSimpleName(),
+            e.getMessage() == null ? "" : (" - " + e.getMessage()));
         transaction.rollback();
       } catch (Exception ex) {
         log.warn("Failed to roll back", ex);
@@ -52,9 +51,9 @@ final class SimpleTransactionManager
   }
 
   private <T, E extends Exception> T withTransaction(ThrowingTransactionalSupplier<T, E> work)
-          throws E {
+      throws E {
     try (Connection connection = connectionProvider.obtainConnection();
-         SimpleTransaction transaction = pushTransaction(new SimpleTransaction(connection, null))) {
+        SimpleTransaction transaction = pushTransaction(new SimpleTransaction(connection, null))) {
       log.debug("Got connection {}", connection);
       boolean autoCommit = transaction.connection().getAutoCommit();
       if (autoCommit) {

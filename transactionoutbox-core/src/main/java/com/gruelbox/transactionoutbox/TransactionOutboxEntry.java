@@ -1,12 +1,15 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+import static java.util.stream.Collectors.joining;
 
 import java.time.Instant;
 import java.util.Arrays;
-
-import static java.util.stream.Collectors.joining;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Internal representation of a {@link TransactionOutbox} task. Generally only directly of interest
@@ -27,7 +30,7 @@ public class TransactionOutboxEntry implements Validatable, Comparable<Transacti
 
   /**
    * @param uniqueRequestId A unique, client-supplied key for the entry. If supplied, it must be
-   * globally unique
+   *     globally unique
    */
   @SuppressWarnings("JavaDoc")
   @Getter
@@ -80,9 +83,9 @@ public class TransactionOutboxEntry implements Validatable, Comparable<Transacti
 
   /**
    * @param processed True if the task has been processed but has been retained to prevent duplicate
-   * requests.
+   *     requests.
    * @return True if the task has been processed but has been retained to prevent * duplicate
-   * requests.
+   *     requests.
    */
   @SuppressWarnings("JavaDoc")
   @Getter
@@ -107,33 +110,27 @@ public class TransactionOutboxEntry implements Validatable, Comparable<Transacti
   @Setter
   private int version;
 
-  @EqualsAndHashCode.Exclude
-  @ToString.Exclude
-  private volatile boolean initialized;
-  @EqualsAndHashCode.Exclude
-  @ToString.Exclude
-  private String description;
+  @EqualsAndHashCode.Exclude @ToString.Exclude private volatile boolean initialized;
+  @EqualsAndHashCode.Exclude @ToString.Exclude private String description;
 
-  /**
-   * @return A textual description of the task.
-   */
+  /** @return A textual description of the task. */
   public String description() {
     if (!this.initialized) {
       synchronized (this) {
         if (!this.initialized) {
           String description =
-                  String.format(
-                          "%s.%s(%s) [%s]%s %s",
-                          invocation.getClassName(),
-                          invocation.getMethodName(),
-                          invocation.getArgs() == null
-                                  ? null
-                                  : Arrays.stream(invocation.getArgs())
-                                  .map(this::stringify)
-                                  .collect(joining(", ")),
-                          id,
-                          uniqueRequestId == null ? "" : " uid=[" + uniqueRequestId + "]",
-                          createdAt.toString());
+              String.format(
+                  "%s.%s(%s) [%s]%s %s",
+                  invocation.getClassName(),
+                  invocation.getMethodName(),
+                  invocation.getArgs() == null
+                      ? null
+                      : Arrays.stream(invocation.getArgs())
+                          .map(this::stringify)
+                          .collect(joining(", ")),
+                  id,
+                  uniqueRequestId == null ? "" : " uid=[" + uniqueRequestId + "]",
+                  createdAt.toString());
           this.description = description;
           this.initialized = true;
           return description;

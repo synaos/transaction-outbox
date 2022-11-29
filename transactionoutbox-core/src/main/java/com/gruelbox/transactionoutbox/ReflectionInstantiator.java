@@ -1,9 +1,8 @@
 package com.gruelbox.transactionoutbox;
 
+import java.lang.reflect.Constructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
-
-import java.lang.reflect.Constructor;
 
 /**
  * {@link Instantiator} which records the class name as its fully-qualified class name, and

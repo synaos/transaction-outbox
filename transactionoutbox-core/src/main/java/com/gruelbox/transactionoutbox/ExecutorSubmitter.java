@@ -1,13 +1,12 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.event.Level;
-
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
+import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.event.Level;
 
 /**
  * Schedules background work using a local {@link Executor} implementation. Note that the {@link
@@ -40,16 +39,14 @@ import java.util.function.Consumer;
 @Builder
 public class ExecutorSubmitter implements Submitter, Validatable {
 
-  /**
-   * @param executor The executor to use.
-   */
+  /** @param executor The executor to use. */
   @SuppressWarnings("JavaDoc")
   private final Executor executor;
 
   /**
    * @param logLevelWorkQueueSaturation The log level to use when work submission hits the executor
-   * queue limit. This usually indicates saturation and may be of greater interest than the
-   * default {@code DEBUG} level.
+   *     queue limit. This usually indicates saturation and may be of greater interest than the
+   *     default {@code DEBUG} level.
    */
   @SuppressWarnings("JavaDoc")
   @Builder.Default
@@ -59,18 +56,18 @@ public class ExecutorSubmitter implements Submitter, Validatable {
   public void submit(TransactionOutboxEntry entry, Consumer<TransactionOutboxEntry> localExecutor) {
     try {
       executor.execute(() -> localExecutor.accept(entry));
-      log.info("Submitted {} for immediate processing", entry.description());
+      log.debug("Submitted {} for immediate processing", entry.description());
     } catch (RejectedExecutionException e) {
       Utils.logAtLevel(
-              log,
-              logLevelWorkQueueSaturation,
-              "Queued {} for processing when executor is available",
-              entry.description());
+          log,
+          logLevelWorkQueueSaturation,
+          "Queued {} for processing when executor is available",
+          entry.description());
     } catch (Exception e) {
       log.warn(
-              "Failed to submit {} for execution. It will be re-attempted later.",
-              entry.description(),
-              e);
+          "Failed to submit {} for execution. It will be re-attempted later.",
+          entry.description(),
+          e);
     }
   }
 

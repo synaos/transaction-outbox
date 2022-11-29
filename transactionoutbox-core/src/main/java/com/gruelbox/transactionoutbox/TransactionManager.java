@@ -1,7 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
-import javax.sql.DataSource;
+import static com.gruelbox.transactionoutbox.Utils.uncheck;
+import static com.gruelbox.transactionoutbox.Utils.uncheckedly;
+
 import java.lang.reflect.Method;
+import javax.sql.DataSource;
 
 /**
  * Key interface giving {@link TransactionOutbox} access to JDBC.
@@ -24,8 +27,8 @@ public interface TransactionManager {
    */
   static ThreadLocalContextTransactionManager fromDataSource(DataSource dataSource) {
     return SimpleTransactionManager.builder()
-            .connectionProvider(DataSourceConnectionProvider.builder().dataSource(dataSource).build())
-            .build();
+        .connectionProvider(DataSourceConnectionProvider.builder().dataSource(dataSource).build())
+        .build();
   }
 
   /**
@@ -37,22 +40,22 @@ public interface TransactionManager {
    * pooling {@code DataSource} such as that provided by Hikari is preferred.
    *
    * @param driverClass The driver class name (e.g. {@code com.mysql.cj.jdbc.Driver}).
-   * @param url         The JDBC url.
-   * @param username    The username.
-   * @param password    The password.
+   * @param url The JDBC url.
+   * @param username The username.
+   * @param password The password.
    * @return The transaction manager.
    */
   static ThreadLocalContextTransactionManager fromConnectionDetails(
-          String driverClass, String url, String username, String password) {
+      String driverClass, String url, String username, String password) {
     return SimpleTransactionManager.builder()
-            .connectionProvider(
-                    DriverConnectionProvider.builder()
-                            .driverClassName(driverClass)
-                            .url(url)
-                            .user(username)
-                            .password(password)
-                            .build())
-            .build();
+        .connectionProvider(
+            DriverConnectionProvider.builder()
+                .driverClassName(driverClass)
+                .url(url)
+                .user(username)
+                .password(password)
+                .build())
+        .build();
   }
 
   /**
@@ -63,7 +66,7 @@ public interface TransactionManager {
    * @param runnable Code which must be called while the transaction is active..
    */
   default void inTransaction(Runnable runnable) {
-    Utils.uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromRunnable(runnable)));
+    uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromRunnable(runnable)));
   }
 
   /**
@@ -74,7 +77,7 @@ public interface TransactionManager {
    * @param work Code which must be called while the transaction is active..
    */
   default void inTransaction(TransactionalWork work) {
-    Utils.uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromWork(work)));
+    uncheck(() -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromWork(work)));
   }
 
   /**
@@ -82,13 +85,13 @@ public interface TransactionManager {
    * either commit on success or rollback on failure, flushing and closing any prepared statements
    * prior to a commit and firing post commit hooks immediately afterwards.
    *
-   * @param <T>      The type returned.
+   * @param <T> The type returned.
    * @param supplier Code which must be called while the transaction is active.
    * @return The result of {@code supplier}.
    */
   default <T> T inTransactionReturns(TransactionalSupplier<T> supplier) {
-    return Utils.uncheckedly(
-            () -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromSupplier(supplier)));
+    return uncheckedly(
+        () -> inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromSupplier(supplier)));
   }
 
   /**
@@ -97,12 +100,12 @@ public interface TransactionManager {
    * prior to a commit and firing post commit hooks immediately afterwards.
    *
    * @param work Code which must be called while the transaction is active.
-   * @param <E>  The exception type.
+   * @param <E> The exception type.
    * @throws E If any exception is thrown by {@link Runnable}.
    */
   @SuppressWarnings("SameReturnValue")
   default <E extends Exception> void inTransactionThrows(ThrowingTransactionalWork<E> work)
-          throws E {
+      throws E {
     inTransactionReturnsThrows(ThrowingTransactionalSupplier.fromWork(work));
   }
 
@@ -111,14 +114,14 @@ public interface TransactionManager {
    * commit on success or rollback on failure, flushing and closing any prepared statements prior to
    * a commit and firing post commit hooks immediately afterwards.
    *
-   * @param <T>  The type returned.
+   * @param <T> The type returned.
    * @param work Code which must be called while the transaction is active.
-   * @param <E>  The exception type.
+   * @param <E> The exception type.
    * @return The result of {@code supplier}.
    * @throws E If any exception is thrown by {@link Runnable}.
    */
   <T, E extends Exception> T inTransactionReturnsThrows(ThrowingTransactionalSupplier<T, E> work)
-          throws E;
+      throws E;
 
   /**
    * All transaction managers need to be able to take a method call at the time it is scheduled and
@@ -127,7 +130,7 @@ public interface TransactionManager {
    * and arguments.
    *
    * @param method The method called.
-   * @param args   The method arguments.
+   * @param args The method arguments.
    * @return The extracted transaction and any modifications to the method and arguments.
    */
   TransactionalInvocation extractTransaction(Method method, Object[] args);
@@ -136,7 +139,7 @@ public interface TransactionManager {
    * Makes any modifications to an invocation at runtime necessary to inject the current transaction
    * or transaction context.
    *
-   * @param invocation  The invocation.
+   * @param invocation The invocation.
    * @param transaction The transaction that the invocation will be run in.
    * @return The modified invocation.
    */

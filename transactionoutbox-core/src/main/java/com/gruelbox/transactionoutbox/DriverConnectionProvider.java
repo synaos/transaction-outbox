@@ -1,10 +1,11 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
+import static com.gruelbox.transactionoutbox.Utils.uncheckedly;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A {@link ConnectionProvider} which requests connections directly from {@link DriverManager}.
@@ -34,20 +35,20 @@ final class DriverConnectionProvider implements ConnectionProvider, Validatable 
 
   @Override
   public Connection obtainConnection() {
-    return Utils.uncheckedly(
-            () -> {
-              if (!initialized) {
-                synchronized (this) {
-                  log.debug("Initialising {}", driverClassName);
-                  Class.forName(driverClassName);
-                  initialized = true;
-                }
-              }
-              log.debug("Opening connection to {}", url);
-              Connection connection = DriverManager.getConnection(url, user, password);
-              connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-              return connection;
-            });
+    return uncheckedly(
+        () -> {
+          if (!initialized) {
+            synchronized (this) {
+              log.debug("Initialising {}", driverClassName);
+              Class.forName(driverClassName);
+              initialized = true;
+            }
+          }
+          log.debug("Opening connection to {}", url);
+          Connection connection = DriverManager.getConnection(url, user, password);
+          connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+          return connection;
+        });
   }
 
   @Override

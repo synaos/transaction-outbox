@@ -1,8 +1,7 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.sql.Connection;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A stub transaction manager that assumes no underlying database and thread local transaction
@@ -10,7 +9,7 @@ import java.sql.Connection;
  */
 @Slf4j
 public class StubThreadLocalTransactionManager
-        extends AbstractThreadLocalTransactionManager<SimpleTransaction> {
+    extends AbstractThreadLocalTransactionManager<SimpleTransaction> {
 
   @Beta
   public StubThreadLocalTransactionManager() {
@@ -19,20 +18,20 @@ public class StubThreadLocalTransactionManager
 
   @Override
   public <T, E extends Exception> T inTransactionReturnsThrows(
-          ThrowingTransactionalSupplier<T, E> work) throws E {
+      ThrowingTransactionalSupplier<T, E> work) throws E {
     return withTransaction(
-            atx -> {
-              T result = work.doWork(atx);
-              ((SimpleTransaction) atx).processHooks();
-              return result;
-            });
+        atx -> {
+          T result = work.doWork(atx);
+          ((SimpleTransaction) atx).processHooks();
+          return result;
+        });
   }
 
   private <T, E extends Exception> T withTransaction(ThrowingTransactionalSupplier<T, E> work)
-          throws E {
+      throws E {
     Connection mockConnection = Utils.createLoggingProxy(new ProxyFactory(), Connection.class);
     try (SimpleTransaction transaction =
-                 pushTransaction(new SimpleTransaction(mockConnection, null))) {
+        pushTransaction(new SimpleTransaction(mockConnection, null))) {
       return work.doWork(transaction);
     } finally {
       popTransaction();

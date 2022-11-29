@@ -3,21 +3,17 @@ package com.gruelbox.transactionoutbox;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
-/**
- * Access and manipulation of a currently-active transaction.
- */
+/** Access and manipulation of a currently-active transaction. */
 public interface Transaction {
 
-  /**
-   * @return The connection for the transaction.
-   */
+  /** @return The connection for the transaction. */
   Connection connection();
 
   /**
    * @param <T> The context type. Coerced on read.
    * @return A {@link TransactionManager}-specific object representing the context of this
-   * transaction. Intended for use with {@link TransactionManager} implementations that support
-   * explicitly-passed transaction context injection into method arguments.
+   *     transaction. Intended for use with {@link TransactionManager} implementations that support
+   *     explicitly-passed transaction context injection into method arguments.
    */
   default <T> T context() {
     return null;

@@ -4,7 +4,7 @@ package com.gruelbox.transactionoutbox;
 public interface ThrowingTransactionalSupplier<T, E extends Exception> {
 
   static <F extends Exception> ThrowingTransactionalSupplier<Void, F> fromRunnable(
-          Runnable runnable) {
+      Runnable runnable) {
     return transaction -> {
       runnable.run();
       return null;
@@ -12,7 +12,7 @@ public interface ThrowingTransactionalSupplier<T, E extends Exception> {
   }
 
   static <F extends Exception> ThrowingTransactionalSupplier<Void, F> fromWork(
-          ThrowingTransactionalWork<F> work) {
+      ThrowingTransactionalWork<F> work) {
     return transaction -> {
       work.doWork(transaction);
       return null;
@@ -27,7 +27,7 @@ public interface ThrowingTransactionalSupplier<T, E extends Exception> {
   }
 
   static <T> ThrowingTransactionalSupplier<T, RuntimeException> fromSupplier(
-          TransactionalSupplier<T> work) {
+      TransactionalSupplier<T> work) {
     return work::doWork;
   }
 

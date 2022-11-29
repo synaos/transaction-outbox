@@ -1,8 +1,7 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static com.gruelbox.transactionoutbox.Utils.safelyClose;
+import static com.gruelbox.transactionoutbox.Utils.uncheck;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +10,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,14 +36,14 @@ class SimpleTransaction implements Transaction, AutoCloseable {
   @Override
   public final PreparedStatement prepareBatchStatement(String sql) {
     return preparedStatements.computeIfAbsent(
-            sql, s -> Utils.uncheckedly(() -> connection.prepareStatement(s)));
+        sql, s -> Utils.uncheckedly(() -> connection.prepareStatement(s)));
   }
 
   final void flushBatches() {
     if (!preparedStatements.isEmpty()) {
       log.debug("Flushing batches");
       for (PreparedStatement statement : preparedStatements.values()) {
-        Utils.uncheck(statement::executeBatch);
+        uncheck(statement::executeBatch);
       }
     }
   }
@@ -54,7 +56,7 @@ class SimpleTransaction implements Transaction, AutoCloseable {
   }
 
   void commit() {
-    Utils.uncheck(connection::commit);
+    uncheck(connection::commit);
   }
 
   void rollback() throws SQLException {
@@ -71,7 +73,7 @@ class SimpleTransaction implements Transaction, AutoCloseable {
   public void close() {
     if (!preparedStatements.isEmpty()) {
       log.debug("Closing batch statements");
-      Utils.safelyClose(preparedStatements.values());
+      safelyClose(preparedStatements.values());
     }
   }
 }

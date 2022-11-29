@@ -72,11 +72,11 @@ public class Invocation {
    * @param mdc Thread-local context to recreate when running the task.
    */
   public Invocation(
-          String className,
-          String methodName,
-          Class<?>[] parameterTypes,
-          Object[] args,
-          Map<String, String> mdc) {
+      String className,
+      String methodName,
+      Class<?>[] parameterTypes,
+      Object[] args,
+      Map<String, String> mdc) {
     this.className = className;
     this.methodName = methodName;
     this.parameterTypes = parameterTypes;
@@ -85,7 +85,7 @@ public class Invocation {
   }
 
   void invoke(Object instance, TransactionOutboxListener listener)
-          throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     Method method = instance.getClass().getMethod(methodName, parameterTypes);
     method.setAccessible(true);
     if (log.isDebugEnabled()) {

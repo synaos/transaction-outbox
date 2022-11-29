@@ -26,12 +26,12 @@ public interface ThreadLocalContextTransactionManager extends TransactionManager
    * up to the implementation).
    *
    * @param work Code which must be called while the transaction is active.
-   * @param <E>  The exception type.
-   * @throws E                            If any exception is thrown by {@link Runnable}.
+   * @param <E> The exception type.
+   * @throws E If any exception is thrown by {@link Runnable}.
    * @throws NoTransactionActiveException If a transaction is not currently active.
    */
   default <E extends Exception> void requireTransaction(ThrowingTransactionalWork<E> work)
-          throws E, NoTransactionActiveException {
+      throws E, NoTransactionActiveException {
     requireTransactionReturns(ThrowingTransactionalSupplier.fromWork(work));
   }
 
@@ -40,16 +40,16 @@ public interface ThreadLocalContextTransactionManager extends TransactionManager
    * up to the implementation).
    *
    * @param work Code which must be called while the transaction is active.
-   * @param <T>  The type returned.
-   * @param <E>  The exception type.
+   * @param <T> The type returned.
+   * @param <E> The exception type.
    * @return The value returned by {@code work}.
-   * @throws E                             If any exception is thrown by {@link Runnable}.
-   * @throws NoTransactionActiveException  If a transaction is not currently active.
+   * @throws E If any exception is thrown by {@link Runnable}.
+   * @throws NoTransactionActiveException If a transaction is not currently active.
    * @throws UnsupportedOperationException If the transaction manager does not support thread-local
-   *                                       context.
+   *     context.
    */
   <T, E extends Exception> T requireTransactionReturns(ThrowingTransactionalSupplier<T, E> work)
-          throws E, NoTransactionActiveException;
+      throws E, NoTransactionActiveException;
 
   /**
    * Obtains the active transaction by using {@link
@@ -57,19 +57,19 @@ public interface ThreadLocalContextTransactionManager extends TransactionManager
    * in the method invocation. No changes are made to the invocation.
    *
    * @param method The method called.
-   * @param args   The method arguments.
+   * @param args The method arguments.
    * @return The transactional invocation.
    */
   @Override
   default TransactionalInvocation extractTransaction(Method method, Object[] args) {
     return requireTransactionReturns(
-            transaction ->
-                    new TransactionalInvocation(
-                            method.getDeclaringClass(),
-                            method.getName(),
-                            method.getParameterTypes(),
-                            args,
-                            transaction));
+        transaction ->
+            new TransactionalInvocation(
+                method.getDeclaringClass(),
+                method.getName(),
+                method.getParameterTypes(),
+                args,
+                transaction));
   }
 
   /**

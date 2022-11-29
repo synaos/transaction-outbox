@@ -269,7 +269,7 @@ public class DefaultPersistor implements Persistor, Validatable {
 
   @Override
   public List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now)
-          throws Exception {
+      throws Exception {
     //TODO: could be moved to dialect
     String statement = dialect.equals(Dialect.POSTGRESQL_9) ?
             "WITH minCreatedAtOfGroup as (SELECT min(createdat) OVER (PARTITION BY groupid) as minCreatedAt, id as mId FROM " + tableName + ")"

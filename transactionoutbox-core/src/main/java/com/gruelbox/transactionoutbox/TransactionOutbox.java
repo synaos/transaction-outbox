@@ -1,13 +1,12 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.ToString;
-import org.slf4j.MDC;
-import org.slf4j.event.Level;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import lombok.ToString;
+import org.slf4j.MDC;
+import org.slf4j.event.Level;
 
 /**
  * An implementation of the <a
@@ -17,9 +16,7 @@ import java.util.function.Supplier;
  */
 public interface TransactionOutbox {
 
-  /**
-   * @return A builder for creating a new instance of {@link TransactionOutbox}.
-   */
+  /** @return A builder for creating a new instance of {@link TransactionOutbox}. */
   static TransactionOutboxBuilder builder() {
     return TransactionOutboxImpl.builder();
   }
@@ -54,7 +51,7 @@ public interface TransactionOutbox {
    * last attempted.
    *
    * @param clazz The class to proxy.
-   * @param <T>   The type to proxy.
+   * @param <T> The type to proxy.
    * @return The proxy of {@code T}.
    */
   <T> T schedule(Class<T> clazz);
@@ -88,7 +85,7 @@ public interface TransactionOutbox {
    *
    * @param entryId The entry id.
    * @return True if the request to unblock the entry was successful. May return false if another
-   * thread unblocked the entry first.
+   *     thread unblocked the entry first.
    */
   boolean unblock(String entryId);
 
@@ -97,11 +94,11 @@ public interface TransactionOutbox {
    * retried again. Requires an active transaction and a transaction manager that supports supplied
    * context.
    *
-   * @param entryId            The entry id.
+   * @param entryId The entry id.
    * @param transactionContext The transaction context ({@link TransactionManager} implementation
-   *                           specific).
+   *     specific).
    * @return True if the request to unblock the entry was successful. May return false if another
-   * thread unblocked the entry first.
+   *     thread unblocked the entry first.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   boolean unblock(String entryId, Object transactionContext);
@@ -115,9 +112,7 @@ public interface TransactionOutbox {
   @SuppressWarnings("WeakerAccess")
   void processNow(TransactionOutboxEntry entry);
 
-  /**
-   * Builder for {@link TransactionOutbox}.
-   */
+  /** Builder for {@link TransactionOutbox}. */
   @ToString
   abstract class TransactionOutboxBuilder {
 
@@ -135,13 +130,12 @@ public interface TransactionOutbox {
     protected Duration retentionThreshold;
     protected Boolean initializeImmediately;
 
-    protected TransactionOutboxBuilder() {
-    }
+    protected TransactionOutboxBuilder() {}
 
     /**
      * @param transactionManager Provides {@link TransactionOutbox} with the ability to start,
-     *                           commit and roll back transactions as well as interact with running transactions started
-     *                           outside.
+     *     commit and roll back transactions as well as interact with running transactions started
+     *     outside.
      * @return Builder.
      */
     public TransactionOutboxBuilder transactionManager(TransactionManager transactionManager) {
@@ -151,8 +145,8 @@ public interface TransactionOutbox {
 
     /**
      * @param instantiator Responsible for describing a class as a name and creating instances of
-     *                     that class at runtime from the name. See {@link Instantiator} for more information.
-     *                     Defaults to {@link Instantiator#usingReflection()}.
+     *     that class at runtime from the name. See {@link Instantiator} for more information.
+     *     Defaults to {@link Instantiator#usingReflection()}.
      * @return Builder.
      */
     public TransactionOutboxBuilder instantiator(Instantiator instantiator) {
@@ -162,9 +156,9 @@ public interface TransactionOutbox {
 
     /**
      * @param submitter Used for scheduling background work. If no submitter is specified, {@link
-     *                  TransactionOutbox} will use {@link Submitter#withDefaultExecutor()}. See {@link
-     *                  Submitter#withExecutor(Executor)} for more information on designing bespoke submitters
-     *                  for remoting.
+     *     TransactionOutbox} will use {@link Submitter#withDefaultExecutor()}. See {@link
+     *     Submitter#withExecutor(Executor)} for more information on designing bespoke submitters
+     *     for remoting.
      * @return Builder.
      */
     public TransactionOutboxBuilder submitter(Submitter submitter) {
@@ -174,8 +168,8 @@ public interface TransactionOutbox {
 
     /**
      * @param attemptFrequency How often tasks should be re-attempted. This should be balanced with
-     *                         {@link #flushBatchSize} and the frequency with which {@link #flush()} is called to
-     *                         achieve optimum throughput. Defaults to 2 minutes.
+     *     {@link #flushBatchSize} and the frequency with which {@link #flush()} is called to
+     *     achieve optimum throughput. Defaults to 2 minutes.
      * @return Builder.
      */
     public TransactionOutboxBuilder attemptFrequency(Duration attemptFrequency) {
@@ -185,7 +179,7 @@ public interface TransactionOutbox {
 
     /**
      * @param blockAfterAttempts how many attempts a task should be retried before it is permanently
-     *                           blocked. Defaults to 5.
+     *     blocked. Defaults to 5.
      * @return Builder.
      */
     public TransactionOutboxBuilder blockAfterAttempts(int blockAfterAttempts) {
@@ -195,8 +189,8 @@ public interface TransactionOutbox {
 
     /**
      * @param flushBatchSize How many items should be attempted in each flush. This should be
-     *                       balanced with {@link #attemptFrequency} and the frequency with which {@link #flush()} is
-     *                       called to achieve optimum throughput. Defaults to 4096.
+     *     balanced with {@link #attemptFrequency} and the frequency with which {@link #flush()} is
+     *     called to achieve optimum throughput. Defaults to 4096.
      * @return Builder.
      */
     public TransactionOutboxBuilder flushBatchSize(int flushBatchSize) {
@@ -206,7 +200,7 @@ public interface TransactionOutbox {
 
     /**
      * @param clockProvider The {@link Clock} source. Generally best left alone except when testing.
-     *                      Defaults to the system clock.
+     *     Defaults to the system clock.
      * @return Builder.
      */
     public TransactionOutboxBuilder clockProvider(Supplier<Clock> clockProvider) {
@@ -216,7 +210,7 @@ public interface TransactionOutbox {
 
     /**
      * @param listener Event listener. Allows client code to react to tasks running, failing or
-     *                 getting blocked.
+     *     getting blocked.
      * @return Builder.
      */
     public TransactionOutboxBuilder listener(TransactionOutboxListener listener) {
@@ -226,10 +220,10 @@ public interface TransactionOutbox {
 
     /**
      * @param persistor The method {@link TransactionOutbox} uses to interact with the database.
-     *                  This encapsulates all {@link TransactionOutbox} interaction with the database outside
-     *                  transaction management (which is handled by the {@link TransactionManager}). Defaults to
-     *                  a multi-platform SQL implementation that should not need to be changed in most cases. If
-     *                  re-implementing this interface, read the documentation on {@link Persistor} carefully.
+     *     This encapsulates all {@link TransactionOutbox} interaction with the database outside
+     *     transaction management (which is handled by the {@link TransactionManager}). Defaults to
+     *     a multi-platform SQL implementation that should not need to be changed in most cases. If
+     *     re-implementing this interface, read the documentation on {@link Persistor} carefully.
      * @return Builder.
      */
     public TransactionOutboxBuilder persistor(Persistor persistor) {
@@ -239,8 +233,8 @@ public interface TransactionOutbox {
 
     /**
      * @param logLevelTemporaryFailure The log level to use when logging temporary task failures.
-     *                                 Includes a full stack trace. Defaults to {@code WARN} level, but you may wish to reduce
-     *                                 it to a lower level if you consider warnings to be incidents.
+     *     Includes a full stack trace. Defaults to {@code WARN} level, but you may wish to reduce
+     *     it to a lower level if you consider warnings to be incidents.
      * @return Builder.
      */
     public TransactionOutboxBuilder logLevelTemporaryFailure(Level logLevelTemporaryFailure) {
@@ -250,8 +244,8 @@ public interface TransactionOutbox {
 
     /**
      * @param serializeMdc Determines whether to include any Slf4j {@link MDC} (Mapped Diagnostic
-     *                     Context) in serialized invocations and recreate the state in submitted tasks. Defaults to
-     *                     true.
+     *     Context) in serialized invocations and recreate the state in submitted tasks. Defaults to
+     *     true.
      * @return Builder.
      */
     public TransactionOutboxBuilder serializeMdc(Boolean serializeMdc) {
@@ -261,8 +255,8 @@ public interface TransactionOutbox {
 
     /**
      * @param retentionThreshold The length of time that any request with a unique client id will be
-     *                           remembered, such that if the same request is repeated within the threshold period, {@link
-     *                           AlreadyScheduledException} will be thrown.
+     *     remembered, such that if the same request is repeated within the threshold period, {@link
+     *     AlreadyScheduledException} will be thrown.
      * @return Builder.
      */
     public TransactionOutboxBuilder retentionThreshold(Duration retentionThreshold) {
@@ -272,8 +266,8 @@ public interface TransactionOutbox {
 
     /**
      * @param initializeImmediately If true, {@link TransactionOutbox#initialize()} is called
-     *                              automatically on creation (this is the default). Set to false in environments where
-     *                              structured startup means that the database should not be accessed until later.
+     *     automatically on creation (this is the default). Set to false in environments where
+     *     structured startup means that the database should not be accessed until later.
      * @return Builder.
      */
     public TransactionOutboxBuilder initializeImmediately(boolean initializeImmediately) {
@@ -301,8 +295,8 @@ public interface TransactionOutbox {
      * basis).
      *
      * @param uniqueRequestId The unique request id. May be {@code null}, but if non-null may be a
-     *                        maximum of 250 characters in length. It is advised that if these ids are client-supplied,
-     *                        they be prepended with some sort of context identifier to ensure global uniqueness.
+     *     maximum of 250 characters in length. It is advised that if these ids are client-supplied,
+     *     they be prepended with some sort of context identifier to ensure global uniqueness.
      * @return Builder.
      */
     ParameterizedScheduleBuilder uniqueRequestId(String uniqueRequestId);
@@ -326,7 +320,7 @@ public interface TransactionOutbox {
      * .runMyMethod("with", "some", "arguments");</pre>
      *
      * @param clazz The class to proxy.
-     * @param <T>   The type to proxy.
+     * @param <T> The type to proxy.
      * @return The proxy of {@code T}.
      */
     <T> T schedule(Class<T> clazz);

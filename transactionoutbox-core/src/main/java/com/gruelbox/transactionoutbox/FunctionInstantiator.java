@@ -1,8 +1,7 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.experimental.SuperBuilder;
-
 import java.util.function.Function;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 class FunctionInstantiator extends AbstractFullyQualifiedNameInstantiator {

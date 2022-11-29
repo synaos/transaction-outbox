@@ -1,18 +1,14 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.Builder;
-
 import java.time.Instant;
 import java.util.List;
+import lombok.Builder;
 
-/**
- * Stub implementation of {@link Persistor}.
- */
+/** Stub implementation of {@link Persistor}. */
 @Builder
 public class StubPersistor implements Persistor {
 
-  StubPersistor() {
-  }
+  StubPersistor() {}
 
   @Override
   public void migrate(TransactionManager transactionManager) {
@@ -58,5 +54,4 @@ public class StubPersistor implements Persistor {
   public int deleteProcessedAndExpired(Transaction tx, int batchSize, Instant now) {
     return 0;
   }
-
 }

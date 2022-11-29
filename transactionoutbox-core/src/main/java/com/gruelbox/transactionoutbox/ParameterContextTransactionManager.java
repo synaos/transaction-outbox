@@ -62,11 +62,11 @@ public interface ParameterContextTransactionManager<T> extends TransactionManage
           transaction = transactionFromContext((T) candidate);
           if (transaction == null) {
             throw new IllegalArgumentException(
-                    candidate.getClass().getName()
-                            + " context passed to "
-                            + method
-                            + " does not relate to a known transaction. This either indicates that the context object was not "
-                            + "created by normal means or the transaction manager is incorrectly configured.");
+                candidate.getClass().getName()
+                    + " context passed to "
+                    + method
+                    + " does not relate to a known transaction. This either indicates that the context object was not "
+                    + "created by normal means or the transaction manager is incorrectly configured.");
           }
         }
         args[i] = null;
@@ -75,15 +75,15 @@ public interface ParameterContextTransactionManager<T> extends TransactionManage
     }
     if (transaction == null) {
       throw new IllegalArgumentException(
-              getClass().getName()
-                      + " requires transaction context (either "
-                      + contextType().getName()
-                      + " or "
-                      + Transaction.class.getName()
-                      + ") to be passed as a parameter to any scheduled method.");
+          getClass().getName()
+              + " requires transaction context (either "
+              + contextType().getName()
+              + " or "
+              + Transaction.class.getName()
+              + ") to be passed as a parameter to any scheduled method.");
     }
     return new TransactionalInvocation(
-            method.getDeclaringClass(), method.getName(), params, args, transaction);
+        method.getDeclaringClass(), method.getName(), params, args, transaction);
   }
 
   /**
@@ -98,29 +98,29 @@ public interface ParameterContextTransactionManager<T> extends TransactionManage
   default Invocation injectTransaction(Invocation invocation, Transaction transaction) {
     Object[] args = Arrays.copyOf(invocation.getArgs(), invocation.getArgs().length);
     Class<?>[] params =
-            Arrays.copyOf(invocation.getParameterTypes(), invocation.getParameterTypes().length);
+        Arrays.copyOf(invocation.getParameterTypes(), invocation.getParameterTypes().length);
     for (int i = 0; i < invocation.getParameterTypes().length; i++) {
       Class<?> parameterType = invocation.getParameterTypes()[i];
       if (Transaction.class.isAssignableFrom(parameterType)) {
         if (args[i] != null) {
           throw new IllegalArgumentException(
-                  String.format(
-                          "Parameter %s.%s[%d] contains unexpected serialized Transaction",
-                          invocation.getClassName(), invocation.getMethodName(), i));
+              String.format(
+                  "Parameter %s.%s[%d] contains unexpected serialized Transaction",
+                  invocation.getClassName(), invocation.getMethodName(), i));
         }
         args[i] = transaction;
       } else if (parameterType.equals(TransactionContextPlaceholder.class)) {
         if (args[i] != null) {
           throw new IllegalArgumentException(
-                  String.format(
-                          "Parameter %s.%s[%d] contains unexpected serialized Transaction context",
-                          invocation.getClassName(), invocation.getMethodName(), i));
+              String.format(
+                  "Parameter %s.%s[%d] contains unexpected serialized Transaction context",
+                  invocation.getClassName(), invocation.getMethodName(), i));
         }
         args[i] = transaction.context();
         params[i] = contextType();
       }
     }
     return new Invocation(
-            invocation.getClassName(), invocation.getMethodName(), params, args, invocation.getMdc());
+        invocation.getClassName(), invocation.getMethodName(), params, args, invocation.getMdc());
   }
 }
