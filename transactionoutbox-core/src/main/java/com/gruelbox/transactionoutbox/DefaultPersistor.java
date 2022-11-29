@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DefaultPersistor implements Persistor, Validatable {
 
   private static final String ALL_FIELDS =
-          "id, uniqueRequestId, invocation, lastAttemptTime, nextAttemptTime, attempts, blocked, processed, version, createdat, groupid";
+      "id, uniqueRequestId, invocation, lastAttemptTime, nextAttemptTime, attempts, blocked, processed, version, createdat, groupid";
 
   /**
    * @param writeLockTimeoutSeconds How many seconds to wait before timing out on obtaining a write

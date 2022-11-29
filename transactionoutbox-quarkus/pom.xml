@@ -35,7 +35,7 @@
 		    <groupId>jakarta.transaction</groupId>
 		    <artifactId>jakarta.transaction-api</artifactId>
 		</dependency>
-
+		
 		<!-- Test -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
@@ -73,7 +73,7 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
+	
 	 <dependencyManagement>
 		<dependencies>
 			<dependency>
