@@ -183,14 +183,26 @@ public class DefaultPersistor implements Persistor, Validatable {
   }
 
   @Override
-  public boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) {
+  public boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) throws Exception {
 
     if (entry == null || entry.getId() == null) {
       return false;
     }
 
     try (PreparedStatement stmt = tx.connection().prepareStatement(
-            "SELECT * FROM " + tableName + "  WHERE id = ? AND version = ? AND NOT EXISTS (SELECT * FROM " + tableName + " WHERE groupId = ? AND processed = false AND createdAt < ?) FOR UPDATE SKIP LOCKED"
+            dialect.isSupportsSkipLock()
+            // language=MySQL
+            ? "SELECT * FROM " + tableName
+                + " WHERE id = ? AND version = ? "
+                + "AND NOT EXISTS (SELECT * FROM " + tableName
+                  + " WHERE groupId = ? AND processed = false AND createdAt < ?) "
+                + "FOR UPDATE SKIP LOCKED"
+            // language=MySQL
+            : "SELECT * FROM " + tableName
+                + " WHERE id = ? AND version = ? "
+                + "AND NOT EXISTS (SELECT * FROM " + tableName
+                  + " WHERE groupId = ? AND processed = false AND createdAt < ?) "
+                + "FOR UPDATE"
     )) {
       stmt.setString(1, entry.getId());
       stmt.setInt(2, entry.getVersion());
@@ -198,8 +210,6 @@ public class DefaultPersistor implements Persistor, Validatable {
       stmt.setTimestamp(4, Timestamp.from(entry.getCreatedAt()));
       stmt.setQueryTimeout(writeLockTimeoutSeconds);
       return extractResultSet(entry, stmt);
-    } catch (SQLException e) {
-      return false;
     }
   }
 
@@ -245,12 +255,7 @@ public class DefaultPersistor implements Persistor, Validatable {
       stmt.setString(1, entry.getId());
       stmt.setInt(2, entry.getVersion());
       stmt.setQueryTimeout(writeLockTimeoutSeconds);
-      try {
-        return resultSetIsNotEmpty(entry, stmt);
-      } catch (SQLTimeoutException e) {
-        log.debug("Lock attempt timed out on {}", entry.description());
-        return false;
-      }
+      return extractResultSet(entry, stmt);
     }
   }
 
@@ -271,33 +276,30 @@ public class DefaultPersistor implements Persistor, Validatable {
   public List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now)
       throws Exception {
     //TODO: could be moved to dialect
-    String statement = dialect.equals(Dialect.POSTGRESQL_9) ?
-            "WITH minCreatedAtOfGroup as (SELECT min(createdat) OVER (PARTITION BY groupid) as minCreatedAt, id as mId FROM " + tableName + ")"
-                    + " SELECT "
-                    + ALL_FIELDS
-                    + " FROM "
-                    + tableName
-                    + " as t "
-                    + "JOIN minCreatedAtOfGroup on minCreatedAtOfGroup.mId = t.id "
-                    + "WHERE "
-                    + "(SELECT max(nextAttemptTime) "
-                    + "from "
-                    + tableName
-                    + " WHERE groupId = t.groupId "
-                    + "AND processed = false "
-                    + "AND createdAt <= t.createdAt) < ? "
-                    + "AND blocked = false "
-                    + "AND processed = false "
-                    + "order by minCreatedAtOfGroup.minCreatedAt, createdat "
-                    + "LIMIT ?" :
-            "SELECT "
-                    + ALL_FIELDS
-                    + " FROM "
-                    + tableName
-                    + " WHERE nextAttemptTime < ? "
-                    + "AND blocked = false "
-                    + "AND processed = false "
-                    + "LIMIT ?";
+    String statement = dialect.equals(Dialect.POSTGRESQL_9)
+            // language=MySQL
+            ? "WITH minCreatedAtOfGroup as (SELECT min(createdat) "
+                + "OVER (PARTITION BY groupid) as minCreatedAt, id as mId FROM " + tableName + ")"
+                + " SELECT " + ALL_FIELDS
+                + " FROM " + tableName + " as t "
+                + "JOIN minCreatedAtOfGroup on minCreatedAtOfGroup.mId = t.id "
+                + "WHERE "
+                + "(SELECT MAX(nextAttemptTime) "
+                + "FROM " + tableName
+                + " WHERE groupId = t.groupId "
+                + "AND processed = false "
+                + "AND createdAt <= t.createdAt) < ? "
+                + "AND blocked = false "
+                + "AND processed = false "
+                + "ORDER BY minCreatedAtOfGroup.minCreatedAt, createdat "
+                + "LIMIT ?"
+            // language=MySQL
+            : "SELECT " + ALL_FIELDS
+                + " FROM " + tableName
+                + " WHERE nextAttemptTime < ? "
+                + "AND blocked = false "
+                + "AND processed = false "
+                + "LIMIT ?";
 
     String forUpdate = "";
     if (dialect.isSupportsSkipLock()) {
