@@ -112,7 +112,7 @@ public class Invocation {
     try {
       return instance.getClass().getMethod(methodName, parameterTypes);
     } catch (NoSuchMethodException e) {
-        return instance.getClass().getDeclaredMethod(methodName, parameterTypes);
+      return instance.getClass().getDeclaredMethod(methodName, parameterTypes);
     }
   }
 }
