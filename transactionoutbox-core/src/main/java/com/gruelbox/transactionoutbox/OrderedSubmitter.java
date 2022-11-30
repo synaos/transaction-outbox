@@ -68,10 +68,10 @@ public class OrderedSubmitter implements Submitter, Validatable {
       }
 
       queuedOrderedTasks.compute(entry.getGroupId(), (groupId, future) -> {
-        CompletableFuture<Void> newFuture = future == null
+        CompletableFuture<Void> newFuture = (future == null || future.isDone())
                 ? CompletableFuture.runAsync(() -> localExecutor.accept(entry), executor)
                 : future.thenRunAsync(() -> localExecutor.accept(entry), executor);
-        newFuture.thenRun(() -> cleanUpQueue(entry.getGroupId()));
+        newFuture.whenComplete((input, exception) -> cleanUpQueue(entry.getGroupId()));
         return newFuture;
       });
       log.debug("Submitted {} for ordered processing", entry.description());
