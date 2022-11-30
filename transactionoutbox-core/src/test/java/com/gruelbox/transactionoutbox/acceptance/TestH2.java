@@ -7,12 +7,10 @@ import com.gruelbox.transactionoutbox.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
 @SuppressWarnings("WeakerAccess")
-@Disabled //todo fixme
 class TestH2 extends AbstractAcceptanceTest {
 
   static final ThreadLocal<Boolean> inWrappedInvocation = ThreadLocal.withInitial(() -> false);
