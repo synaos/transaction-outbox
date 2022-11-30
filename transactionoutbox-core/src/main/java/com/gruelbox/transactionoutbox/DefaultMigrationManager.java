@@ -122,7 +122,7 @@ class DefaultMigrationManager {
   private static void createVersionTableIfNotExists(Connection connection) throws SQLException {
     try (Statement s = connection.createStatement()) {
       // language=MySQL
-      s.execute("CREATE TABLE IF NOT EXISTS TXNO_VERSION (version INT)");
+      s.execute("CREATE TABLE IF NOT EXISTS TXNO_VERSION (version INT PRIMARY KEY)");
     }
   }
 
