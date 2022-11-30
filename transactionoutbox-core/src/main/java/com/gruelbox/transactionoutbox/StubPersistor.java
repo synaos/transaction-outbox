@@ -47,7 +47,7 @@ public class StubPersistor implements Persistor {
 
   @Override
   public boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) {
-    return false;
+    return true;
   }
 
   @Override

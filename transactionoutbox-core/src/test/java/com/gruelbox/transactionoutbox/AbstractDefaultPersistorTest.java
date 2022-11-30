@@ -402,7 +402,7 @@ abstract class AbstractDefaultPersistorTest {
         .blocked(blocked)
         .lastAttemptTime(null)
         .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
-        .createdAt(now)
+        .createdAt(now.truncatedTo(MILLIS))
         .groupId(UUID.randomUUID().toString())
         .build();
   }
@@ -416,7 +416,7 @@ abstract class AbstractDefaultPersistorTest {
         .lastAttemptTime(null)
         .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
         .uniqueRequestId(uniqueId)
-        .createdAt(now)
+        .createdAt(now.truncatedTo(MILLIS))
         .groupId(UUID.randomUUID().toString())
         .build();
   }
