@@ -90,7 +90,7 @@ public class OrderedSubmitter implements Submitter, Validatable {
         CompletableFuture<Void> newFuture = (future == null || future.isDone())
                 ? CompletableFuture.runAsync(() -> localExecutor.accept(entry), executor)
                 : future.thenRunAsync(() -> localExecutor.accept(entry), executor);
-        newFuture.whenCompleteAsync((input, exception) -> cleanUpQueue(entry.getGroupId()), ForkJoinPool.commonPool());
+        newFuture.whenCompleteAsync((input, exception) -> cleanUpQueue(entry.getGroupId(), exception), ForkJoinPool.commonPool());
         return newFuture;
       });
       log.debug("Submitted {} for ordered processing", entry.description());
@@ -131,8 +131,13 @@ public class OrderedSubmitter implements Submitter, Validatable {
 //    future.whenComplete((input, exception) -> chainTasks(entryExecutor, exception));
 //  }
 
-  private void cleanUpQueue(String groupId) {
-    queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId) && entry.getValue().isDone());
+  private void cleanUpQueue(String groupId, Throwable exception) {
+    log.info("Clean up for groupId: " + groupId);
+    if (exception != null) {
+      queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId));
+    } else {
+      queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId) && entry.getValue().isDone());
+    }
   }
 
   @Override
