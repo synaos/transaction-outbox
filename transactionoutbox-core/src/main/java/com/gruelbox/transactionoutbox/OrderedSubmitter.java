@@ -1,14 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.event.Level;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -54,8 +49,6 @@ public class OrderedSubmitter implements Submitter, Validatable {
    */
   private final ConcurrentHashMap<String, CompletableFuture<Void>> queuedOrderedTasks = new ConcurrentHashMap<>();
 
-//  private final ConcurrentHashMap<String, List<EntryExecutor>> queuedTasks = new ConcurrentHashMap<>();
-
   /**
    * @param logLevelWorkQueueSaturation The log level to use when work submission hits the executor
    * queue limit. This usually indicates saturation and may be of greater interest than the
@@ -74,36 +67,24 @@ public class OrderedSubmitter implements Submitter, Validatable {
         return;
       }
 
-//      queuedTasks.compute(entry.getGroupId(), (groupId, queue) -> {
-//        EntryExecutor entryExecutor = new EntryExecutor(entry, localExecutor);
-//        if (queue == null) {
-//          queue = new ArrayList<>();
-//          executeTask(entryExecutor);
-//        }
-//        if (!queue.contains(entryExecutor)) {
-//          queue.add(entryExecutor);
-//        }
-//        return queue;
-//      });
-
       queuedOrderedTasks.compute(entry.getGroupId(), (groupId, future) -> {
         CompletableFuture<Void> newFuture = (future == null || future.isDone())
                 ? CompletableFuture.runAsync(() -> localExecutor.accept(entry), executor)
                 : future.thenRunAsync(() -> localExecutor.accept(entry), executor);
-        newFuture.whenCompleteAsync((input, exception) -> cleanUpQueue(entry.getGroupId(), exception), ForkJoinPool.commonPool());
+        newFuture.whenComplete((input, exception) -> cleanUpQueue(entry.getGroupId()));
         return newFuture;
       });
       log.debug("Submitted {} for ordered processing", entry.description());
 
     } catch (RejectedExecutionException e) {
-      queuedOrderedTasks.entrySet().removeIf(orderedEntry -> orderedEntry.getKey().equals(entry.getGroupId()));
+      removeGroupIdFromOrderedTasks(entry.getGroupId());
       Utils.logAtLevel(
               log,
               logLevelWorkQueueSaturation,
               "Queued {} for processing when executor is available",
               entry.description());
     } catch (Exception e) {
-      queuedOrderedTasks.entrySet().removeIf(orderedEntry -> orderedEntry.getKey().equals(entry.getGroupId()));
+      removeGroupIdFromOrderedTasks(entry.getGroupId());
       log.warn(
               "Failed to submit {} for execution. It will be re-attempted later.",
               entry.description(),
@@ -111,46 +92,17 @@ public class OrderedSubmitter implements Submitter, Validatable {
     }
   }
 
-//  private void chainTasks(EntryExecutor entryExecutor, Throwable exception) {
-//    if (exception == null) {
-//      queuedTasks.compute(entryExecutor.entry.getGroupId(), (groupId, queue) -> {
-//        if (queue == null) {
-//          return null;
-//        }
-//        queue.remove(entryExecutor);
-//        executeTask(queue.get(0));
-//        return queue;
-//      });
-//    } else {
-//      queuedTasks.compute(entryExecutor.entry.getGroupId(), (groupId, queue) -> {
-//        return null;
-//      });
-//    }
-//  }
-//
-//  private void executeTask(EntryExecutor entryExecutor) {
-//    var future = CompletableFuture.runAsync(() -> entryExecutor.localExecutor.accept(entryExecutor.entry), executor);
-//    future.whenComplete((input, exception) -> chainTasks(entryExecutor, exception));
-//  }
+  private void cleanUpQueue(String groupId) {
+    queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId) && entry.getValue().isDone());
+  }
 
-  private void cleanUpQueue(String groupId, Throwable exception) {
-    log.info("Clean up for groupId: " + groupId);
-    if (exception != null) {
-      queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId));
-    } else {
-      queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId) && entry.getValue().isDone());
-    }
+  private void removeGroupIdFromOrderedTasks(String groupId) {
+    queuedOrderedTasks.entrySet().removeIf(entry -> entry.getKey().equals(groupId));
   }
 
   @Override
   public void validate(Validator validator) {
     validator.notNull("executor", executor);
     validator.notNull("logLevelWorkQueueSaturation", logLevelWorkQueueSaturation);
-  }
-
-  @AllArgsConstructor
-  private static class EntryExecutor {
-    TransactionOutboxEntry entry;
-    @EqualsAndHashCode.Exclude Consumer<TransactionOutboxEntry> localExecutor;
   }
 }
