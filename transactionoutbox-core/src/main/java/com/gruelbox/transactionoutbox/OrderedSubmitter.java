@@ -96,12 +96,14 @@ public class OrderedSubmitter implements Submitter, Validatable {
       log.debug("Submitted {} for ordered processing", entry.description());
 
     } catch (RejectedExecutionException e) {
+      queuedOrderedTasks.entrySet().removeIf(orderedEntry -> orderedEntry.getKey().equals(entry.getGroupId()));
       Utils.logAtLevel(
               log,
               logLevelWorkQueueSaturation,
               "Queued {} for processing when executor is available",
               entry.description());
     } catch (Exception e) {
+      queuedOrderedTasks.entrySet().removeIf(orderedEntry -> orderedEntry.getKey().equals(entry.getGroupId()));
       log.warn(
               "Failed to submit {} for execution. It will be re-attempted later.",
               entry.description(),
