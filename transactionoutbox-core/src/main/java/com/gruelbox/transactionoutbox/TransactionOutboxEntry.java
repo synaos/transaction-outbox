@@ -97,10 +97,20 @@ public class TransactionOutboxEntry implements Validatable, Comparable<Transacti
   private boolean processed;
 
 
+  /**
+   * @param createdAt The point in time at which this entry was created.
+   * @return The instant at which this entry was created.
+   */
+  @SuppressWarnings("JavaDoc")
   @Getter
   @Setter
   private Instant createdAt;
 
+  /**
+   * @param groupId The id of the group to which this entry belongs.
+   * @return The id of the group to which this entry belongs.
+   */
+  @SuppressWarnings("JavaDoc")
   @Getter
   @Setter
   private String groupId;
