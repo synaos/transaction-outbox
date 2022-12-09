@@ -62,8 +62,10 @@ public interface TransactionOutboxListener {
     // No-op
   }
 
-  /***
-   * TODO javadoc
+  /**
+   * Fired when a transaction outbox task is skipped. This can happen if the entry is either locked, already processed
+   * or not the next entry in sequence.
+   *
    * @param entry The outbox entry skipped.
    */
   default void skipped(TransactionOutboxEntry entry) {

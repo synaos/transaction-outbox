@@ -65,7 +65,7 @@ public class OrderedSubmitter implements Submitter, Validatable {
   private final Executor executor;
 
   /**
-   * TODO add javadoc
+   * @param queuedOrderedTasks The next tasks to be submitted mapped by their groupId.
    */
   private final ConcurrentHashMap<String, CompletableFuture<Void>> queuedOrderedTasks = new ConcurrentHashMap<>();
 

@@ -307,8 +307,11 @@ public interface TransactionOutbox {
     ParameterizedScheduleBuilder uniqueRequestId(String uniqueRequestId);
 
     /**
-     * TODO
-     * @param groupId
+     * Specifies the groupId to which the request belongs. This groupId can be used to cluster particular
+     * entries that need to be sent out in chronological order.
+     *
+     * @param groupId The id of the group to which the entry belongs. May be {@code null}, but if non-null may be a
+     * maximum of 250 characters in length.
      * @return Builder.
      */
     ParameterizedScheduleBuilder groupId(String groupId);

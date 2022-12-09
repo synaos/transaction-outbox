@@ -84,10 +84,13 @@ public interface Persistor {
   boolean lock(Transaction tx, TransactionOutboxEntry entry) throws Exception;
 
   /**
-   * TODO
-   * @param tx
-   * @param entry
-   * @return
+   * Attempts to pessimistically lock an existing {@link TransactionOutboxEntry} if no unprocessed entry in the same
+   * group exists that was created earlier.
+   *
+   * @param tx The current {@link Transaction}.
+   * @param entry The entry to be locked
+   * @return true if the lock was successful.
+   * @throws Exception Any other exception.
    */
   boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) throws Exception;
 
