@@ -1,5 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding methods necessary for ordering of
+ * entries to the interface.
+ */
+
 import java.lang.reflect.InvocationTargetException;
 
 /** A listener for events fired by {@link TransactionOutbox}. */

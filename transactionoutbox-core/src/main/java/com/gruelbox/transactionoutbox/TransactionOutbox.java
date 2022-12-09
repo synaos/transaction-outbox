@@ -1,5 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by updating the documentation and the interface
+ * with the newly introduced ordering capabilities.
+ */
+
 import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.Executor;

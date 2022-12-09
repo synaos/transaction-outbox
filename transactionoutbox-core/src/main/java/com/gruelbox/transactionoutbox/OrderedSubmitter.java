@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been added by members of SYNAOS GmbH in November 2022.
+ */
+
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.event.Level;

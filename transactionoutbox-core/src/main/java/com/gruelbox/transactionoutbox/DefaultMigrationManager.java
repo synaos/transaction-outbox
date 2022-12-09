@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding additional migrations.
+ */
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;

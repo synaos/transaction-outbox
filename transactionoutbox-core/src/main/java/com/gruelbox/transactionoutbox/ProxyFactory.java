@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by refactoring.
+ */
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;

@@ -1,5 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding additional fields to the outbox
+ * table and adding additional queries.
+ */
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;

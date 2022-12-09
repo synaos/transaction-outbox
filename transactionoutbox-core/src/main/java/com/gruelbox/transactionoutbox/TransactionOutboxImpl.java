@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by introducing ordering capabilities.
+ */
+
 import static com.gruelbox.transactionoutbox.Utils.logAtLevel;
 import static com.gruelbox.transactionoutbox.Utils.uncheckedly;
 import static java.time.temporal.ChronoUnit.MILLIS;

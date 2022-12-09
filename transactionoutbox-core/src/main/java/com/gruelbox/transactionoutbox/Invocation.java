@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by minor refactoring.
+ */
+
 import com.google.gson.annotations.SerializedName;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
