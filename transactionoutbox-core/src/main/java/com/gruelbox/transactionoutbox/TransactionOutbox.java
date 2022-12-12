@@ -70,11 +70,17 @@ public interface TransactionOutbox {
   ParameterizedScheduleBuilder with();
 
   /**
-   * Identifies any stale tasks queued by checking unprocessed entries sorted by date.
-   * First unprocessed entry of a group will be executed. Every call of this method will process
-   * max one task.
+   * Identifies any stale tasks queued using {@link #schedule(Class)} (those which were queued more
+   * than supplied {@link TransactionOutboxBuilder#attemptFrequency(Duration)} ago and have been
+   * tried less than {@link TransactionOutboxBuilder#blockAfterAttempts(int)} )} times) and attempts
+   * to resubmit them.
    *
-   * <p>As long as all the database entries are locked, this method will return quickly.
+   * <p>As long as the {@link TransactionOutboxBuilder#submitter(Submitter)} is non-blocking (e.g.
+   * uses a bounded queue with a {@link java.util.concurrent.RejectedExecutionHandler} which throws
+   * such as {@link java.util.concurrent.ThreadPoolExecutor.AbortPolicy}), this method will return
+   * quickly. However, if the {@link TransactionOutboxBuilder#submitter(Submitter)} uses a bounded
+   * queue with a blocking policy, this method could block for a long time, depending on how long
+   * the scheduled work takes and how large {@link TransactionOutboxBuilder#flushBatchSize(int)} is.
    *
    * <p>Calls {@link TransactionManager#inTransactionReturns(TransactionalSupplier)} to start a new
    * transaction for the fetch.
