@@ -84,6 +84,9 @@ public interface TransactionOutbox {
    *
    * <p>Calls {@link TransactionManager#inTransactionReturns(TransactionalSupplier)} to start a new
    * transaction for the fetch.
+   * 
+   * <p>Additionally, expires any records completed prior to the {@link
+   * TransactionOutboxBuilder#retentionThreshold(Duration)}.
    *
    * @return true if any work was flushed.
    */
