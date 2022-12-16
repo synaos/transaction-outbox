@@ -283,8 +283,8 @@ public class DefaultPersistor implements Persistor, Validatable {
     //TODO: could be moved to dialect
     String statement = dialect.equals(Dialect.POSTGRESQL_9)
             // language=MySQL
-            ? "WITH minCreatedAtOfGroup as (SELECT min(createdat) "
-                + "OVER (PARTITION BY groupid) as minCreatedAt, id as mId FROM " + tableName + ")"
+            ? "WITH minCreatedAtOfGroup as (SELECT min(createdAt) "
+                + "OVER (PARTITION BY groupId) as minCreatedAt, id as mId FROM " + tableName + ")"
                 + " SELECT " + ALL_FIELDS
                 + " FROM " + tableName + " as t "
                 + "JOIN minCreatedAtOfGroup on minCreatedAtOfGroup.mId = t.id "
@@ -296,7 +296,7 @@ public class DefaultPersistor implements Persistor, Validatable {
                 + "AND createdAt <= t.createdAt) < ? "
                 + "AND blocked = false "
                 + "AND processed = false "
-                + "ORDER BY minCreatedAtOfGroup.minCreatedAt, createdat "
+                + "ORDER BY minCreatedAtOfGroup.minCreatedAt, createdAt "
                 + "LIMIT ?"
             // language=MySQL
             : "SELECT " + ALL_FIELDS
