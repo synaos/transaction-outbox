@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ public class SpringTransactionManager implements ThreadLocalContextTransactionMa
 
   private final SpringTransaction transactionInstance = new SpringTransaction();
   private final DataSource dataSource;
+  private final ConcurrentHashMap<String, Integer> postCommitOrdering = new ConcurrentHashMap<>();
 
   @Autowired
   SpringTransactionManager(DataSource dataSource) {
@@ -101,6 +103,9 @@ public class SpringTransactionManager implements ThreadLocalContextTransactionMa
             @Override
             public void afterCompletion(int status) {
               Utils.safelyClose(preparedStatement);
+              if (TransactionSynchronizationManager.getCurrentTransactionName() != null) {
+                postCommitOrdering.remove(TransactionSynchronizationManager.getCurrentTransactionName());
+              }
             }
           });
       return preparedStatement;
@@ -108,11 +113,17 @@ public class SpringTransactionManager implements ThreadLocalContextTransactionMa
 
     @Override
     public void addPostCommitHook(Runnable runnable) {
+      final int orderNumber = postCommitOrdering.compute(TransactionSynchronizationManager.getCurrentTransactionName(),
+              (key, value) -> (value != null ? value : -1) + 1);
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
             @Override
             public void afterCommit() {
               runnable.run();
+            }
+            @Override
+            public int getOrder() {
+              return orderNumber;
             }
           });
     }
