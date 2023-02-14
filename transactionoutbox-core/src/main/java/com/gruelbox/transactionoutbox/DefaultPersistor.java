@@ -294,7 +294,12 @@ public class DefaultPersistor implements Persistor, Validatable {
                 + " WHERE groupId = t.groupId "
                 + "AND processed = false "
                 + "AND createdAt <= t.createdAt) < ? "
-                + "AND blocked = false "
+                + "AND NOT EXISTS "
+                + "(SELECT 1 FROM " + tableName
+                + " WHERE groupId = t.groupId "
+                + "AND processed = false "
+                + "AND createdAt <= t.createdAt "
+                + "AND blocked = true) "
                 + "AND processed = false "
                 + "ORDER BY minCreatedAtOfGroup.minCreatedAt, createdAt "
                 + "LIMIT ?"
