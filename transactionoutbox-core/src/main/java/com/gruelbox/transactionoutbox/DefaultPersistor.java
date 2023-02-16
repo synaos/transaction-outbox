@@ -196,13 +196,11 @@ public class DefaultPersistor implements Persistor, Validatable {
 
     try (PreparedStatement stmt = tx.connection().prepareStatement(
             dialect.isSupportsSkipLock()
-            // language=MySQL
             ? "SELECT * FROM " + tableName
                 + " WHERE id = ? AND version = ? "
                 + "AND NOT EXISTS (SELECT * FROM " + tableName
                   + " WHERE groupId = ? AND processed = false AND createdAt < ?) "
                 + "FOR UPDATE SKIP LOCKED"
-            // language=MySQL
             : "SELECT * FROM " + tableName
                 + " WHERE id = ? AND version = ? "
                 + "AND NOT EXISTS (SELECT * FROM " + tableName
@@ -249,11 +247,9 @@ public class DefaultPersistor implements Persistor, Validatable {
         tx.connection()
             .prepareStatement(
                 dialect.isSupportsSkipLock()
-                    // language=MySQL
                     ? "SELECT id, invocation FROM "
                         + tableName
                         + " WHERE id = ? AND version = ? FOR UPDATE SKIP LOCKED"
-                    // language=MySQL
                     : "SELECT id, invocation FROM "
                         + tableName
                         + " WHERE id = ? AND version = ? FOR UPDATE")) {
@@ -282,7 +278,6 @@ public class DefaultPersistor implements Persistor, Validatable {
       throws Exception {
     //TODO: could be moved to dialect
     String statement = dialect.equals(Dialect.POSTGRESQL_9)
-            // language=MySQL
             ? "WITH minCreatedAtOfGroup as (SELECT min(createdAt) "
                 + "OVER (PARTITION BY groupId) as minCreatedAt, id as mId FROM " + tableName + ")"
                 + " SELECT " + ALL_FIELDS
@@ -294,7 +289,12 @@ public class DefaultPersistor implements Persistor, Validatable {
                 + " WHERE groupId = t.groupId "
                 + "AND processed = false "
                 + "AND createdAt <= t.createdAt) < ? "
-                + "AND blocked = false "
+                + "AND NOT EXISTS "
+                + "(SELECT 1 FROM " + tableName
+                + " WHERE groupId = t.groupId "
+                + "AND processed = false "
+                + "AND createdAt <= t.createdAt "
+                + "AND blocked = true) "
                 + "AND processed = false "
                 + "ORDER BY minCreatedAtOfGroup.minCreatedAt, createdAt "
                 + "LIMIT ?"
