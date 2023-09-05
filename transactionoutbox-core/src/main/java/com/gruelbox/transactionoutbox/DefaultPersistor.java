@@ -276,46 +276,46 @@ public class DefaultPersistor implements Persistor, Validatable {
   @Override
   public List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now)
       throws Exception {
+
+    String forUpdate = "";
+    if (dialect.isSupportsSkipLock()) {
+      if (dialect.equals(Dialect.POSTGRESQL_9)) {
+        forUpdate = " FOR UPDATE OF t_group_first SKIP LOCKED";
+      } else {
+        forUpdate = " FOR UPDATE SKIP LOCKED";
+      }
+    }
+
     //TODO: could be moved to dialect
     String statement = dialect.equals(Dialect.POSTGRESQL_9)
-            ? "WITH minCreatedAtOfGroup as (SELECT min(createdAt) "
-                + "OVER (PARTITION BY groupId) as minCreatedAt, id as mId FROM " + tableName + ")"
-                + " SELECT " + ALL_FIELDS
-                + " FROM " + tableName + " as t "
-                + "JOIN minCreatedAtOfGroup on minCreatedAtOfGroup.mId = t.id "
-                + "WHERE "
-                + "(SELECT MAX(nextAttemptTime) "
-                + "FROM " + tableName
-                + " WHERE groupId = t.groupId "
-                + "AND processed = false "
-                + "AND createdAt <= t.createdAt) < ? "
+            ? "SELECT " + ALL_FIELDS + " FROM "
+                + "(SELECT t.* "
+                + "FROM " + tableName + " t "
+                + "JOIN " + tableName + " t_group_first "
+                + "ON t.groupid = t_group_first.groupid "
+                + "WHERE t.processed = false "
+                + "AND t_group_first.processed = false "
+                + "AND t_group_first.blocked = false "
+                + "AND t_group_first.nextAttemptTime < ? "
                 + "AND NOT EXISTS "
-                + "(SELECT 1 FROM " + tableName
-                + " WHERE groupId = t.groupId "
-                + "AND processed = false "
-                + "AND createdAt <= t.createdAt "
-                + "AND blocked = true) "
-                + "AND processed = false "
-                + "ORDER BY minCreatedAtOfGroup.minCreatedAt, createdAt "
-                + "LIMIT ?"
+                + "(SELECT 1 "
+                + "FROM " + tableName + " ti "
+                + "WHERE ti.groupid = t_group_first.groupid "
+                + "AND ti.processed = false "
+                + "AND (ti.createdat < t_group_first.createdat "
+                + "OR (ti.createdat = t_group_first.createdat AND ti.id < t_group_first.id))) "
+                + "ORDER BY t_group_first.createdat, t.createdat "
+                + "LIMIT ? " + forUpdate
+                + " ) x;"
             // language=MySQL
             : "SELECT " + ALL_FIELDS
                 + " FROM " + tableName
                 + " WHERE nextAttemptTime < ? "
                 + "AND blocked = false "
                 + "AND processed = false "
-                + "LIMIT ?";
+                + "LIMIT ? " + forUpdate;
 
-    String forUpdate = "";
-    if (dialect.isSupportsSkipLock()) {
-      if (dialect.equals(Dialect.POSTGRESQL_9)) {
-        forUpdate = " FOR UPDATE OF t SKIP LOCKED";
-      } else {
-        forUpdate = " FOR UPDATE SKIP LOCKED";
-      }
-    }
-
-    try (PreparedStatement stmt = tx.connection().prepareStatement(statement + forUpdate)) {
+    try (PreparedStatement stmt = tx.connection().prepareStatement(statement)) {
       stmt.setTimestamp(1, Timestamp.from(now));
       stmt.setInt(2, batchSize);
       return gatherResults(batchSize, stmt);
