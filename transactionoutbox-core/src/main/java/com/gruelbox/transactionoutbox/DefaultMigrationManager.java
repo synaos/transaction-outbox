@@ -85,7 +85,10 @@ class DefaultMigrationManager {
               Map.of(Dialect.POSTGRESQL_9, "ALTER TABLE TXNO_OUTBOX ADD COLUMN createdAt TIMESTAMP(6) NOT NULL DEFAULT NOW()")),
           new Migration(11,
               "Add createdAt index",
-              "CREATE INDEX IX_TXNO_OUTBOX_2 ON TXNO_OUTBOX (createdAt)"));
+              "CREATE INDEX IX_TXNO_OUTBOX_2 ON TXNO_OUTBOX (createdAt)"),
+          new Migration(12,
+              "Add index for batch selection",
+              "CREATE INDEX IX_TXNO_OUTBOX_3 ON TXNO_OUTBOX (groupid, createdat)"));
 
   static void migrate(TransactionManager transactionManager, Dialect dialect) {
     transactionManager.inTransaction(
