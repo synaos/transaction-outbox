@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding necessary fields for ordered processing.
+ */
+
 import static java.util.stream.Collectors.joining;
 
 import java.time.Instant;
@@ -18,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode
 @ToString
-public class TransactionOutboxEntry implements Validatable {
+public class TransactionOutboxEntry implements Validatable, Comparable<TransactionOutboxEntry> {
 
   /**
    * @param id The id of the record. Usually a UUID.
@@ -92,6 +96,25 @@ public class TransactionOutboxEntry implements Validatable {
   @Setter
   private boolean processed;
 
+
+  /**
+   * @param createdAt The point in time at which this entry was created.
+   * @return The instant at which this entry was created.
+   */
+  @SuppressWarnings("JavaDoc")
+  @Getter
+  @Setter
+  private Instant createdAt;
+
+  /**
+   * @param groupId The id of the group to which this entry belongs.
+   * @return The id of the group to which this entry belongs.
+   */
+  @SuppressWarnings("JavaDoc")
+  @Getter
+  @Setter
+  private String groupId;
+
   /**
    * @param version The optimistic locking version. Monotonically increasing with each update.
    * @return The optimistic locking version. Monotonically increasing with each update.
@@ -111,7 +134,7 @@ public class TransactionOutboxEntry implements Validatable {
         if (!this.initialized) {
           String description =
               String.format(
-                  "%s.%s(%s) [%s]%s",
+                  "%s.%s(%s) [%s]%s %s",
                   invocation.getClassName(),
                   invocation.getMethodName(),
                   invocation.getArgs() == null
@@ -120,7 +143,8 @@ public class TransactionOutboxEntry implements Validatable {
                           .map(this::stringify)
                           .collect(joining(", ")),
                   id,
-                  uniqueRequestId == null ? "" : " uid=[" + uniqueRequestId + "]");
+                  uniqueRequestId == null ? "" : " uid=[" + uniqueRequestId + "]",
+                  createdAt.toString());
           this.description = description;
           this.initialized = true;
           return description;
@@ -151,5 +175,14 @@ public class TransactionOutboxEntry implements Validatable {
     validator.inFuture("nextAttemptTime", nextAttemptTime);
     validator.positiveOrZero("attempts", attempts);
     validator.positiveOrZero("version", version);
+    validator.notNull("createdAt", createdAt);
+  }
+
+  @Override
+  public int compareTo(TransactionOutboxEntry otherEntry) {
+    if (otherEntry == null) {
+      throw new IllegalArgumentException("TransactionOutBoxEntry to compare can't be null");
+    }
+    return createdAt.compareTo(otherEntry.getCreatedAt());
   }
 }

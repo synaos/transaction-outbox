@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by introducing ordering capabilities.
+ */
+
 import static com.gruelbox.transactionoutbox.Utils.logAtLevel;
 import static com.gruelbox.transactionoutbox.Utils.uncheckedly;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -106,7 +110,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
 
   @Override
   public <T> T schedule(Class<T> clazz) {
-    return schedule(clazz, null);
+    return schedule(clazz, UUID.randomUUID().toString(), null);
   }
 
   @Override
@@ -220,7 +224,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
     }
   }
 
-  private <T> T schedule(Class<T> clazz, String uniqueRequestId) {
+  private <T> T schedule(Class<T> clazz, String groupId, String uniqueRequestId) {
     if (!initialized.get()) {
       throw new IllegalStateException("Not initialized");
     }
@@ -232,10 +236,11 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                   var extracted = transactionManager.extractTransaction(method, args);
                   TransactionOutboxEntry entry =
                       newEntry(
-                          extracted.getClazz(),
+                          clazz,
                           extracted.getMethodName(),
                           extracted.getParameters(),
                           extracted.getArgs(),
+                          groupId,
                           uniqueRequestId);
                   validator.validate(entry);
                   persistor.save(extracted.getTransaction(), entry);
@@ -264,10 +269,10 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
       var success =
           transactionManager.inTransactionReturnsThrows(
               transaction -> {
-                if (!persistor.lock(transaction, entry)) {
+                if (!persistor.orderedLock(transaction, entry)) {
                   return false;
                 }
-                log.info("Processing {}", entry.description());
+                log.debug("Processing {}", entry.description());
                 invoke(entry, transaction);
                 if (entry.getUniqueRequestId() == null) {
                   persistor.delete(transaction, entry);
@@ -282,10 +287,11 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
                 return true;
               });
       if (success) {
-        log.info("Processed {}", entry.description());
+        log.debug("Processed {}", entry.description());
         listener.success(entry);
       } else {
-        log.debug("Skipped task {} - may be locked or already processed", entry.getId());
+        log.debug("Skipped task {} - may be locked, already processed or not in order", entry.getId());
+        listener.skipped(entry);
       }
     } catch (InvocationTargetException e) {
       updateAttemptCount(entry, e.getCause());
@@ -304,7 +310,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
   }
 
   private TransactionOutboxEntry newEntry(
-      Class<?> clazz, String methodName, Class<?>[] params, Object[] args, String uniqueRequestId) {
+      Class<?> clazz, String methodName, Class<?>[] params, Object[] args, String groupId, String uniqueRequestId) {
     return TransactionOutboxEntry.builder()
         .id(UUID.randomUUID().toString())
         .invocation(
@@ -317,6 +323,8 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
         .lastAttemptTime(null)
         .nextAttemptTime(after(attemptFrequency))
         .uniqueRequestId(uniqueRequestId)
+        .createdAt(clockProvider.get().instant())
+        .groupId(groupId)
         .build();
   }
 
@@ -401,6 +409,7 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
   private class ParameterizedScheduleBuilderImpl implements ParameterizedScheduleBuilder {
 
     private String uniqueRequestId;
+    private String groupId;
 
     @Override
     public ParameterizedScheduleBuilder uniqueRequestId(String uniqueRequestId) {
@@ -409,11 +418,20 @@ class TransactionOutboxImpl implements TransactionOutbox, Validatable {
     }
 
     @Override
+    public ParameterizedScheduleBuilder groupId(String groupId) {
+      this.groupId = groupId;
+      return this;
+    }
+
+    @Override
     public <T> T schedule(Class<T> clazz) {
       if (uniqueRequestId != null && uniqueRequestId.length() > 250) {
         throw new IllegalArgumentException("uniqueRequestId may be up to 250 characters");
       }
-      return TransactionOutboxImpl.this.schedule(clazz, uniqueRequestId);
+      if (groupId != null && groupId.length() > 250) {
+        throw new IllegalArgumentException("groupId may be up to 250 characters");
+      }
+      return TransactionOutboxImpl.this.schedule(clazz, groupId, uniqueRequestId);
     }
   }
 }

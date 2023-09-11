@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,11 +109,16 @@ public class SpringTransactionManager implements ThreadLocalContextTransactionMa
 
     @Override
     public void addPostCommitHook(Runnable runnable) {
+      final int orderNumber = TransactionSynchronizationManager.getSynchronizations().size();
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
             @Override
             public void afterCommit() {
               runnable.run();
+            }
+            @Override
+            public int getOrder() {
+              return orderNumber;
             }
           });
     }

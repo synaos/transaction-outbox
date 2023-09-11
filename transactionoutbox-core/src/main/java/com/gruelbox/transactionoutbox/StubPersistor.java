@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding a method for ordered locking.
+ */
+
 import java.time.Instant;
 import java.util.List;
 import lombok.Builder;
@@ -43,6 +47,11 @@ public class StubPersistor implements Persistor {
   @Override
   public List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now) {
     return List.of();
+  }
+
+  @Override
+  public boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) {
+    return true;
   }
 
   @Override

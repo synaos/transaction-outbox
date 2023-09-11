@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by refactoring.
+ */
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -83,7 +87,10 @@ public class ProxyFactory {
           var field = instance.getClass().getDeclaredField("handler");
           field.set(
               instance,
-              (InvocationHandler) (proxy1, method, args) -> processor.apply(method, args));
+              (InvocationHandler) (proxy1, method, args) -> {
+                processor.apply(method, args);
+                return true; // explicitly return value, otherwise NPE will be thrown needed to be returned from TransactionOutboxImpl
+              });
         });
     return instance;
   }
@@ -101,7 +108,8 @@ public class ProxyFactory {
                 new ByteBuddy()
                     .subclass(clazz)
                     .defineField("handler", InvocationHandler.class, Visibility.PUBLIC)
-                    .method(ElementMatchers.isDeclaredBy(clazz))
+                    .method(ElementMatchers.isDeclaredBy(clazz)
+                            .or(ElementMatchers.isDeclaredBy(clazz.getSuperclass())))
                     .intercept(InvocationHandlerAdapter.toField("handler"))
                     .make()
                     .load(clazz.getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
