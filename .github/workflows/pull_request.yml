@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        jdk: [11,15,17]
+        jdk: [17]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.jdk }}
+          maven-version: 3.9.9
 
       - name: Build with Maven
         run: mvn -B package
