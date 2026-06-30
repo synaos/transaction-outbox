@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.engine.discovery.predicates.IsTestMethod;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
@@ -30,7 +30,8 @@ public class TestingUtils {
   public static Stream<DynamicNode> parameterizedClassTester(
       String displayName, Class<?> clazz, Stream<Arguments> streamOfArguments) {
 
-    final List<Method> testMethods = ReflectionUtils.findMethods(clazz, new IsTestMethod());
+    final List<Method> testMethods =
+        ReflectionUtils.findMethods(clazz, method -> AnnotationUtils.isAnnotated(method, Test.class));
     if (testMethods.isEmpty()) {
       throw new IllegalStateException(clazz.getName() + " has no supported @Test methods");
     }

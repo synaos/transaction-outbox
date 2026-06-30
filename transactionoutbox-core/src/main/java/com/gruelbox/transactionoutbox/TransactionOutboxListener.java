@@ -1,5 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding methods necessary for ordering of
+ * entries to the interface.
+ */
+
 import java.lang.reflect.InvocationTargetException;
 
 /** A listener for events fired by {@link TransactionOutbox}. */
@@ -54,6 +59,16 @@ public interface TransactionOutboxListener {
    * @param entry The outbox entry completed.
    */
   default void success(TransactionOutboxEntry entry) {
+    // No-op
+  }
+
+  /**
+   * Fired when a transaction outbox task is skipped. This can happen if the entry is either locked, already processed
+   * or not the next entry in sequence.
+   *
+   * @param entry The outbox entry skipped.
+   */
+  default void skipped(TransactionOutboxEntry entry) {
     // No-op
   }
 

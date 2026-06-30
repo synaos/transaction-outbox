@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by minor refactoring.
+ */
+
 import com.google.gson.annotations.SerializedName;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -86,7 +90,7 @@ public class Invocation {
 
   void invoke(Object instance, TransactionOutboxListener listener)
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    Method method = instance.getClass().getDeclaredMethod(methodName, parameterTypes);
+    Method method = getMethod(instance);
     method.setAccessible(true);
     if (log.isDebugEnabled()) {
       log.debug("Invoking method {} with args {}", method, Arrays.toString(args));
@@ -105,6 +109,14 @@ public class Invocation {
       }
     } else {
       listener.wrapInvocation(() -> method.invoke(instance, args));
+    }
+  }
+
+  private Method getMethod(Object instance) throws NoSuchMethodException {
+    try {
+      return instance.getClass().getMethod(methodName, parameterTypes);
+    } catch (NoSuchMethodException e) {
+      return instance.getClass().getDeclaredMethod(methodName, parameterTypes);
     }
   }
 }

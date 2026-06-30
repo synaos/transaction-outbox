@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding a method for ordered locking.
+ */
+
 import java.time.Instant;
 import java.util.List;
 
@@ -78,6 +82,17 @@ public interface Persistor {
    * @throws Exception Any other exception.
    */
   boolean lock(Transaction tx, TransactionOutboxEntry entry) throws Exception;
+
+  /**
+   * Attempts to pessimistically lock an existing {@link TransactionOutboxEntry} if no unprocessed entry in the same
+   * group exists that was created earlier.
+   *
+   * @param tx The current {@link Transaction}.
+   * @param entry The entry to be locked
+   * @return true if the lock was successful.
+   * @throws Exception Any other exception.
+   */
+  boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) throws Exception;
 
   /**
    * Clears the blocked flag and resets the attempt count to zero.

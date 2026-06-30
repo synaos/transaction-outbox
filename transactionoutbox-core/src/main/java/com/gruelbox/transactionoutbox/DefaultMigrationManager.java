@@ -1,5 +1,9 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding additional migrations.
+ */
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -71,7 +75,20 @@ class DefaultMigrationManager {
               8,
               "Update length of invocation column on outbox for MySQL dialects only.",
               "ALTER TABLE TXNO_OUTBOX MODIFY COLUMN invocation MEDIUMTEXT",
-              Map.of(Dialect.POSTGRESQL_9, "", Dialect.H2, "")));
+              Map.of(Dialect.POSTGRESQL_9, "", Dialect.H2, "")),
+          new Migration(9,
+              "Add groupId column to outbox",
+              "ALTER TABLE TXNO_OUTBOX ADD COLUMN groupId VARCHAR(250)"),
+          new Migration(10,
+              "Add createdAt column to outbox",
+              "ALTER TABLE TXNO_OUTBOX ADD COLUMN createdAt TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) NOT NULL",
+              Map.of(Dialect.POSTGRESQL_9, "ALTER TABLE TXNO_OUTBOX ADD COLUMN createdAt TIMESTAMP(6) NOT NULL DEFAULT NOW()")),
+          new Migration(11,
+              "Add createdAt index",
+              "CREATE INDEX IX_TXNO_OUTBOX_2 ON TXNO_OUTBOX (createdAt)"),
+          new Migration(12,
+              "Add index for batch selection",
+              "CREATE INDEX IX_TXNO_OUTBOX_3 ON TXNO_OUTBOX (groupid, createdat)"));
 
   static void migrate(TransactionManager transactionManager, Dialect dialect) {
     transactionManager.inTransaction(
@@ -112,7 +129,7 @@ class DefaultMigrationManager {
   private static void createVersionTableIfNotExists(Connection connection) throws SQLException {
     try (Statement s = connection.createStatement()) {
       // language=MySQL
-      s.execute("CREATE TABLE IF NOT EXISTS TXNO_VERSION (version INT)");
+      s.execute("CREATE TABLE IF NOT EXISTS TXNO_VERSION (version INT PRIMARY KEY)");
     }
   }
 

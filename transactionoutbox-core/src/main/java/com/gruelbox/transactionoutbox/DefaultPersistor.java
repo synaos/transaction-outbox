@@ -1,5 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by adding additional fields to the outbox
+ * table and adding additional queries.
+ */
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -36,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DefaultPersistor implements Persistor, Validatable {
 
   private static final String ALL_FIELDS =
-          "id, uniqueRequestId, invocation, lastAttemptTime, nextAttemptTime, attempts, blocked, processed, version";
+          "id, uniqueRequestId, invocation, lastAttemptTime, nextAttemptTime, attempts, blocked, processed, version, createdAt, groupId";
 
   /**
    * @param writeLockTimeoutSeconds How many seconds to wait before timing out on obtaining a write
@@ -94,7 +99,7 @@ public class DefaultPersistor implements Persistor, Validatable {
   public void save(Transaction tx, TransactionOutboxEntry entry)
       throws SQLException, AlreadyScheduledException {
     var insertSql =
-        "INSERT INTO " + tableName + " (" + ALL_FIELDS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "INSERT INTO " + tableName + " (" + ALL_FIELDS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     var writer = new StringWriter();
     serializer.serializeInvocation(entry.getInvocation(), writer);
     if (entry.getUniqueRequestId() == null) {
@@ -134,6 +139,8 @@ public class DefaultPersistor implements Persistor, Validatable {
     stmt.setBoolean(7, entry.isBlocked());
     stmt.setBoolean(8, entry.isProcessed());
     stmt.setInt(9, entry.getVersion());
+    stmt.setTimestamp(10, Timestamp.from(entry.getCreatedAt()));
+    stmt.setString(11, entry.getGroupId());
   }
 
   @Override
@@ -181,39 +188,75 @@ public class DefaultPersistor implements Persistor, Validatable {
   }
 
   @Override
+  public boolean orderedLock(Transaction tx, TransactionOutboxEntry entry) throws Exception {
+
+    if (entry == null || entry.getId() == null) {
+      return false;
+    }
+
+    try (PreparedStatement stmt = tx.connection().prepareStatement(
+            dialect.isSupportsSkipLock()
+            ? "SELECT * FROM " + tableName
+                + " WHERE id = ? AND version = ? "
+                + "AND NOT EXISTS (SELECT * FROM " + tableName
+                  + " WHERE groupId = ? AND processed = false AND createdAt < ?) "
+                + "FOR UPDATE SKIP LOCKED"
+            : "SELECT * FROM " + tableName
+                + " WHERE id = ? AND version = ? "
+                + "AND NOT EXISTS (SELECT * FROM " + tableName
+                  + " WHERE groupId = ? AND processed = false AND createdAt < ?) "
+                + "FOR UPDATE"
+    )) {
+      stmt.setString(1, entry.getId());
+      stmt.setInt(2, entry.getVersion());
+      stmt.setString(3, entry.getGroupId());
+      stmt.setTimestamp(4, Timestamp.from(entry.getCreatedAt()));
+      stmt.setQueryTimeout(writeLockTimeoutSeconds);
+      return extractResultSet(entry, stmt);
+    }
+  }
+
+  private boolean extractResultSet(TransactionOutboxEntry entry, PreparedStatement stmt) {
+    try {
+      return resultSetIsNotEmpty(entry, stmt);
+    } catch (SQLException | IOException e) {
+      log.debug("Lock attempt timed out on {}", entry.description());
+      return false;
+    }
+  }
+
+  private boolean resultSetIsNotEmpty(TransactionOutboxEntry entry, PreparedStatement stmt) throws SQLException, IOException {
+    try (ResultSet rs = stmt.executeQuery()) {
+      if (!rs.next()) {
+        return false;
+      }
+      // Ensure that subsequent processing uses a deserialized invocation rather than
+      // the object from the caller, which might not serialize well and thus cause a
+      // difference between immediate and retry processing
+      try (Reader invocationStream = rs.getCharacterStream("invocation")) {
+        entry.setInvocation(serializer.deserializeInvocation(invocationStream));
+      }
+      return true;
+    }
+  }
+
+
+  @Override
   public boolean lock(Transaction tx, TransactionOutboxEntry entry) throws Exception {
     try (PreparedStatement stmt =
         tx.connection()
             .prepareStatement(
                 dialect.isSupportsSkipLock()
-                    // language=MySQL
                     ? "SELECT id, invocation FROM "
                         + tableName
                         + " WHERE id = ? AND version = ? FOR UPDATE SKIP LOCKED"
-                    // language=MySQL
                     : "SELECT id, invocation FROM "
                         + tableName
                         + " WHERE id = ? AND version = ? FOR UPDATE")) {
       stmt.setString(1, entry.getId());
       stmt.setInt(2, entry.getVersion());
       stmt.setQueryTimeout(writeLockTimeoutSeconds);
-      try {
-        try (ResultSet rs = stmt.executeQuery()) {
-          if (!rs.next()) {
-            return false;
-          }
-          // Ensure that subsequent processing uses a deserialized invocation rather than
-          // the object from the caller, which might not serialize well and thus cause a
-          // difference between immediate and retry processing
-          try (Reader invocationStream = rs.getCharacterStream("invocation")) {
-            entry.setInvocation(serializer.deserializeInvocation(invocationStream));
-          }
-          return true;
-        }
-      } catch (SQLTimeoutException e) {
-        log.debug("Lock attempt timed out on {}", entry.description());
-        return false;
-      }
+      return extractResultSet(entry, stmt);
     }
   }
 
@@ -233,17 +276,46 @@ public class DefaultPersistor implements Persistor, Validatable {
   @Override
   public List<TransactionOutboxEntry> selectBatch(Transaction tx, int batchSize, Instant now)
       throws Exception {
-    String forUpdate = dialect.isSupportsSkipLock() ? " FOR UPDATE SKIP LOCKED" : "";
-    try (PreparedStatement stmt =
-        tx.connection()
-            .prepareStatement(
-                // language=MySQL
-                "SELECT "
-                    + ALL_FIELDS
-                    + " FROM "
-                    + tableName
-                    + " WHERE nextAttemptTime < ? AND blocked = false AND processed = false LIMIT ?"
-                    + forUpdate)) {
+
+    String forUpdate = "";
+    if (dialect.isSupportsSkipLock()) {
+      if (dialect.equals(Dialect.POSTGRESQL_9)) {
+        forUpdate = " FOR UPDATE OF t_group_first SKIP LOCKED";
+      } else {
+        forUpdate = " FOR UPDATE SKIP LOCKED";
+      }
+    }
+
+    //TODO: could be moved to dialect
+    String statement = dialect.equals(Dialect.POSTGRESQL_9)
+            ? "SELECT " + ALL_FIELDS + " FROM "
+                + "(SELECT t.* "
+                + "FROM " + tableName + " t "
+                + "JOIN " + tableName + " t_group_first "
+                + "ON t.groupid = t_group_first.groupid "
+                + "WHERE t.processed = false "
+                + "AND t_group_first.processed = false "
+                + "AND t_group_first.blocked = false "
+                + "AND t_group_first.nextAttemptTime < ? "
+                + "AND NOT EXISTS "
+                + "(SELECT 1 "
+                + "FROM " + tableName + " ti "
+                + "WHERE ti.groupid = t_group_first.groupid "
+                + "AND ti.processed = false "
+                + "AND (ti.createdat < t_group_first.createdat "
+                + "OR (ti.createdat = t_group_first.createdat AND ti.id < t_group_first.id))) "
+                + "ORDER BY t_group_first.createdat, t.createdat "
+                + "LIMIT ? " + forUpdate
+                + " ) x;"
+            // language=MySQL
+            : "SELECT " + ALL_FIELDS
+                + " FROM " + tableName
+                + " WHERE nextAttemptTime < ? "
+                + "AND blocked = false "
+                + "AND processed = false "
+                + "LIMIT ? " + forUpdate;
+
+    try (PreparedStatement stmt = tx.connection().prepareStatement(statement)) {
       stmt.setTimestamp(1, Timestamp.from(now));
       stmt.setInt(2, batchSize);
       return gatherResults(batchSize, stmt);
@@ -290,6 +362,8 @@ public class DefaultPersistor implements Persistor, Validatable {
               .blocked(rs.getBoolean("blocked"))
               .processed(rs.getBoolean("processed"))
               .version(rs.getInt("version"))
+              .createdAt(rs.getTimestamp("createdAt").toInstant())
+              .groupId(rs.getString("groupId"))
               .build();
       log.debug("Found {}", entry);
       return entry;

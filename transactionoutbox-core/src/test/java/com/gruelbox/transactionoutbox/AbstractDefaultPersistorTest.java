@@ -1,5 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 to comply with changes for the newly
+ * introduced ordering capabilities.
+ */
+
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -12,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -401,6 +407,8 @@ abstract class AbstractDefaultPersistorTest {
         .blocked(blocked)
         .lastAttemptTime(null)
         .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
+        .createdAt(now.truncatedTo(MILLIS))
+        .groupId(UUID.randomUUID().toString())
         .build();
   }
 
@@ -413,6 +421,8 @@ abstract class AbstractDefaultPersistorTest {
         .lastAttemptTime(null)
         .nextAttemptTime(nextAttemptTime.truncatedTo(MILLIS))
         .uniqueRequestId(uniqueId)
+        .createdAt(now.truncatedTo(MILLIS))
+        .groupId(UUID.randomUUID().toString())
         .build();
   }
 

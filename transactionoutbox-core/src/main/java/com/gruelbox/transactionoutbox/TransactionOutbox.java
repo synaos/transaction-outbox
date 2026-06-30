@@ -1,5 +1,10 @@
 package com.gruelbox.transactionoutbox;
 
+/**
+ * This file has been modified by members of SYNAOS GmbH in November 2022 by updating the documentation and the interface
+ * with the newly introduced ordering capabilities.
+ */
+
 import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.Executor;
@@ -79,7 +84,7 @@ public interface TransactionOutbox {
    *
    * <p>Calls {@link TransactionManager#inTransactionReturns(TransactionalSupplier)} to start a new
    * transaction for the fetch.
-   *
+   * 
    * <p>Additionally, expires any records completed prior to the {@link
    * TransactionOutboxBuilder#retentionThreshold(Duration)}.
    *
@@ -309,6 +314,16 @@ public interface TransactionOutbox {
      * @return Builder.
      */
     ParameterizedScheduleBuilder uniqueRequestId(String uniqueRequestId);
+
+    /**
+     * Specifies the groupId to which the request belongs. This groupId can be used to cluster particular
+     * entries that need to be sent out in chronological order.
+     *
+     * @param groupId The id of the group to which the entry belongs. May be {@code null}, but if non-null may be a
+     * maximum of 250 characters in length.
+     * @return Builder.
+     */
+    ParameterizedScheduleBuilder groupId(String groupId);
 
     /**
      * Equivalent to {@link TransactionOutbox#schedule(Class)}, but applying additional parameters
